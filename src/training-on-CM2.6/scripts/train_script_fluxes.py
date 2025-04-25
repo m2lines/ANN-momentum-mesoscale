@@ -35,7 +35,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    path_save = f'/scratch/$USER/mom6/CM26_ML_models/ocean3d/{args.subfilter}/FGR{args.FGR}/{args.path_save}'
+    path_save = os.path.expandvars(f'/scratch/$USER/mom6/CM26_ML_models/ocean3d/{args.subfilter}/FGR{args.FGR}/{args.path_save}')
 
     os.system(f'mkdir -p {path_save}/model')
 

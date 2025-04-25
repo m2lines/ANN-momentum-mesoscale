@@ -6,13 +6,14 @@ from helpers.operators import Coarsen, CoarsenWeighted, CoarsenKochkov, Subsampl
 from functools import cache
 from helpers.selectors import select_ACC, select_Equator, select_NA_series, select_Pacific_series, select_center
 import gc
+import os
 
 ######## Precomputed training datasets ############
 def read_datasets(keys=['train', 'test', 'validate'], factors=[4, 9, 12, 15], subfilter='subfilter', FGR=3, load=False):
     dictionary = {}
     depth_selector = lambda x: x.isel(zl=np.arange(0,50,5)) if len(x.zl)==50 else x
     for factor in factors:
-        base_path = f'/vast/$USER/CM26_datasets/ocean3d/{subfilter}/FGR{FGR}/factor-{factor}'
+        base_path = os.path.expandvars(f'/vast/$USER/CM26_datasets/ocean3d/{subfilter}/FGR{FGR}/factor-{factor}')
         param = depth_selector(xr.open_dataset(f'{base_path}/param.nc'))
 
         nfiles = {'train': 96, 'test': 24, 'validate': 12}
@@ -116,7 +117,7 @@ class DatasetCM26():
             param_init = xr.open_dataset('gs://cmip6/GFDL_CM2_6/grid', engine='zarr').rename(
                 {'st_ocean': 'zl', 'st_edges_ocean': 'zi'}).reset_coords()
         elif '3d-' in source:
-            base_path = '/vast/$USER/CM26_datasets/ocean3d/rawdata'
+            base_path = os.path.expandvars('/vast/$USER/CM26_datasets/ocean3d/rawdata')
             param = xr.open_dataset(f'{base_path}/param.nc')
             if source == '3d-train':
                 file_list = [f'{base_path}/train-{j}.nc' for j in range(96)]
