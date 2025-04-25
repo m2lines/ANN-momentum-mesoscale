@@ -1,0 +1,4 @@
+[submodule "src/MOM6"]
+	path = src/MOM6
+	url = git@github.com:Pperezhogin/MOM6.git
+	branch = m2lines-mesoscale-ann
