@@ -1,0 +1,59 @@
+OM4_SIS2_cgrid_025
+1900 1 1 0 0 0
+
+"ocean_annual_z%8dy",    12, "months", 1, "days", "time", 12, "months"
+"ocean_annual_rho2%8dy", 12, "months", 1, "days", "time", 12, "months"
+"ocean_month%8dy",        1, "months", 1, "days", "time", 12, "months"
+"ice_month%8dy",          1, "months", 1, "days", "time", 12, "months"
+"ocean_daily%8dy",        1, "days",   1, "days", "time", 12, "months", "2003 1 1 0 0 0" # Start at 2003 until the end of simulation, i.e. for 5 years
+"ocean_3d%8dy",           5, "days",   1, "days", "time", 1,  "months", "2007 1 1 0 0 0" # Start at 2007 until the end, i.e. for 1 year
+
+# Daily starting at 2003
+"ocean_model", "SSU",          "ssu",              "ocean_daily%8dy", "all", "mean", "none",2
+"ocean_model", "SSV",          "ssv",              "ocean_daily%8dy", "all", "mean", "none",2
+"ocean_model", "zos",          "zos",              "ocean_daily%8dy", "all", "mean", "none",2
+"ocean_model", "tos",          "tos",              "ocean_daily%8dy", "all", "mean", "none",2
+"ocean_model", "sos",          "sos",              "ocean_daily%8dy", "all", "mean", "none",2
+
+# Low-frequency
+"ocean_model_z", "so",           "so",               "ocean_annual_z%8dy",   "all", "mean", "none",2
+"ocean_model_z", "uo",           "uo",               "ocean_annual_z%8dy",   "all", "mean", "none",2
+"ocean_model_z", "vo",           "vo",               "ocean_annual_z%8dy",   "all", "mean", "none",2
+"ocean_model_z", "thetao",       "thetao",           "ocean_annual_z%8dy",   "all", "mean", "none",2  # if use pre-TEOS10
+"ocean_model_z", "vmo",          "vmo",              "ocean_annual_z%8dy",   "all", "mean", "none",2
+"ocean_model_z", "umo",          "umo",              "ocean_annual_z%8dy",   "all", "mean", "none",2
+"ocean_model_z", "KE",           "KE",               "ocean_annual_z%8dy",   "all", "mean", "none",2
+"ocean_model_z", "KE_horvisc",   "KE_horvisc",       "ocean_annual_z%8dy",   "all", "mean", "none",2
+#"ocean_model_z", "KE_ZB2020",    "KE_ZB2020",        "ocean_annual_z%8dy",   "all", "mean", "none",2
+
+# Overturning in rho2 coordinates
+"ocean_model_rho2", "thkcello",  "thkcello",         "ocean_annual_rho2%8dy",    "all", "mean", "none",2
+"ocean_model_rho2", "umo",       "umo",              "ocean_annual_rho2%8dy",    "all", "mean", "none",2
+"ocean_model_rho2", "vmo",       "vmo",              "ocean_annual_rho2%8dy",    "all", "mean", "none",2
+
+"ocean_model",   "MLD_003",      "MLD_003",          "ocean_month%8dy",     "all", "mean", "none",2
+"ocean_model",   "tos",          "tos",              "ocean_month%8dy",     "all", "mean", "none",2
+"ocean_model",   "zos",          "zos",              "ocean_month%8dy",     "all", "mean", "none",2
+"ocean_model",   "sos",          "sos",              "ocean_month%8dy",     "all", "mean", "none",2
+
+# Surface fluxes
+"ocean_model",   "tauuo",        "tauuo",            "ocean_month%8dy",     "all", "mean", "none",2
+"ocean_model",   "tauvo",        "tauvo",            "ocean_month%8dy",     "all", "mean", "none",2
+"ocean_model",   "sfdsi",        "sfdsi",            "ocean_month%8dy",     "all", "mean", "none",2
+"ocean_model",   "hfds",         "hfds",             "ocean_month%8dy",     "all", "mean", "none",2
+# Meridional heat and salt transport
+"ocean_model",   "T_ady_2d",     "T_ady_2d",         "ocean_month%8dy",     "all", "mean", "none",2
+"ocean_model",   "S_ady_2d",     "S_ady_2d",         "ocean_month%8dy",     "all", "mean", "none",2
+
+"ice_model",     "EXT",          "EXT",              "ice_month%8dy",       "all", "mean", "none",2
+"ice_model",     "siconc",       "siconc",           "ice_month%8dy",       "all", "mean", "none",2
+"ice_model",     "sithick",      "sithick",          "ice_month%8dy",       "all", "mean", "none",2
+
+# 3D ocean state in native coordinates
+"ocean_model",  "e",            "e",               "ocean_3d%8dy",   "all", "mean", "none",2
+"ocean_model",  "uo",           "uo",              "ocean_3d%8dy",   "all", "mean", "none",2
+"ocean_model",  "vo",           "vo",              "ocean_3d%8dy",   "all", "mean", "none",2
+#"ocean_model",  "ZB2020u",      "ZB2020u",         "ocean_3d%8dy",   "all", "mean", "none",2
+#"ocean_model",  "ZB2020v",      "ZB2020v",         "ocean_3d%8dy",   "all", "mean", "none",2
+#"ocean_model",  "diffu",        "diffu",           "ocean_3d%8dy",   "all", "mean", "none",2
+#"ocean_model",  "diffv",        "diffv",           "ocean_3d%8dy",   "all", "mean", "none",2

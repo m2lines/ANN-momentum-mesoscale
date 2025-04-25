@@ -1,0 +1,29 @@
+! Blank file in which we can put "overrides" for parameters
+!VERBOSITY = 9
+#override RESTART_CHECKSUMS_REQUIRED = False
+#override WRITE_GEOM = 2
+
+#override USE_MEKE = True
+#override FRICTWORK_BUG = False
+#override BACKSCATTER_UNDERBOUND = False
+#override MEKE_ADVECTION_FACTOR = 1.0
+#override MEKE_ALPHA_EADY = 0.0
+#override MEKE_ALPHA_GRID = 1.0
+#override MEKE_ALPHA_RHINES = 1.0
+#override MEKE_BGSRC = 0.0
+#override MEKE_CB = 0.0
+#override MEKE_CD_SCALE = 1.0
+#override MEKE_CT = 0.0
+#override MEKE_FRCOEFF = 1.0
+#override MEKE_BHFRCOEFF = 1.0
+#override MEKE_MIN_LSCALE = True
+#override MEKE_TOPOGRAPHIC_BETA = 1.0
+#override RES_SCALE_MEKE_VISC = True
+#override KH_RES_FN_POWER = 1
+#override KH_RES_SCALE_COEF = 3.1416
+#override VISC_RES_FN_POWER = 1
+#override VISC_RES_SCALE_COEF = 3.1416
+#override MEKE_KHCOEFF = 0.0
+#override MEKE_KHTH_FAC = 1.0
+#override MEKE_KHTR_FAC = 1.0
+#override MEKE_VISCOSITY_COEFF_KU = -0.15
