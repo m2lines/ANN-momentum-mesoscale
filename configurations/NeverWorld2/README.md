@@ -3,4 +3,4 @@ Please follow the link for configuration files of the [NeverWorld2](https://gith
 Please note that:
 * Unparameterized and ZB20 experiments can be run with default MOM6 branch: [NOAA-GFDL/MOM6/tree/dev/gfdl](https://github.com/NOAA-GFDL/MOM6/tree/dev/gfdl) 
 * YBSZ24 parameterization should be run with different MOM6 branch: [ElizabethYankovsky/MOM6/tree/EBT_testing](https://github.com/ElizabethYankovsky/MOM6/tree/EBT_testing)
-* ANN experiment must be run with MOM6 branch [Pperezhogin/MOM6/tree/m2lines-mesoscale-ann](https://github.com/Pperezhogin/MOM6/tree/m2lines-mesoscale-ann). ANN weights you will find in ANN/INPUT
+* ANN experiment must be run with MOM6 branch [Pperezhogin/MOM6/tree/m2lines-mesoscale-ann](https://github.com/Pperezhogin/MOM6/tree/m2lines-mesoscale-ann). ANN weights you will find in [ANN/INPUT](https://github.com/m2lines/ANN-momentum-mesoscale/tree/main/configurations/OM4/ANN/INPUT)
