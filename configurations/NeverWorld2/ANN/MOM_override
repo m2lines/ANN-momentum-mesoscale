@@ -3,9 +3,9 @@ NJGLOBAL = 560
 DT = 600.
 #override HMIX_UV_SFC_PROP = 5.0
 #override INTERNAL_WAVE_SPEED_BETTER_EST = False
-#override MAXTRUNC = 100000
 #override SMAG_BI_CONST = 0.06
 
+#override MAXTRUNC = 100000
 #override USE_ZB2020 = True
 #override ZB_SCALING = 1.0
 #override USE_ANN = 3
@@ -13,4 +13,4 @@ DT = 600.
 #override ZB_KLOWER_R_DISS = 1.0
 #override ZB_KLOWER_SHEAR = 1
 
-#override ANN_FILE_TALL = INPUT/CM26_ML_models/ocean3d/subfilter/FGR3/EXP1/model/Tall.nc
+#override ANN_FILE_TALL = INPUT/CM26_ML_models/ocean3d/subfilter/FGR3/hidden-layer-20/seed-default/model/Tall.nc
