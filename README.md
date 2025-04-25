@@ -9,6 +9,7 @@ This repository contains training algorithm and MOM6 ocean model with implemente
 ## Training ANN on CM2.6 global ocean data
 Training algorithm executes [training loop](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/helpers/train_ann.py#L110) on CPUs via the following script:
 ```
-python src/training-on-CM2.6/scripts/train_script.py
+cd src/training-on-CM2.6/scripts/
+python train_script.py
 ```
-Hyperparameters used in the paper can be found [here](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/scripts/train_script.py#L19-L32).
+Training script [contains](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/scripts/train_script.py#L19-L32) the default hyperparameters used in the paper.
