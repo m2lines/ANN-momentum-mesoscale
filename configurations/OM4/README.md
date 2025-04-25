@@ -4,4 +4,4 @@ Please make OM4_SIS2 configuration work and then update it with our configuratio
 
 Please note that:
 * Unparameterized and Chang23 experiments can be run with default MOM6 branch: [NOAA-GFDL/MOM6/tree/dev/gfdl](https://github.com/NOAA-GFDL/MOM6/tree/dev/gfdl) 
-* ANN experiment must be run with MOM6 branch [Pperezhogin/MOM6/tree/m2lines-mesoscale-ann](https://github.com/Pperezhogin/MOM6/tree/m2lines-mesoscale-ann). ANN weights you will find in ANN/INPUT
+* ANN experiment must be run with MOM6 branch [Pperezhogin/MOM6/tree/m2lines-mesoscale-ann](https://github.com/Pperezhogin/MOM6/tree/m2lines-mesoscale-ann). ANN weights you will find in [ANN/INPUT](https://github.com/m2lines/ANN-momentum-mesoscale/tree/main/configurations/OM4/ANN/INPUT)
