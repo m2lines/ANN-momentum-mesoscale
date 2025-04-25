@@ -3,10 +3,15 @@ This repository contains training algorithm and MOM6 ocean model with implemente
 
 ## MOM6 online experiments
 * The MOM6 source code with implemented ANN parameterization can be found in [src/MOM6](https://github.com/m2lines/ANN-momentum-mesoscale/tree/main/src)
-* The configuration files required to run online experiments are provided for [Neverworld2](https://github.com/m2lines/ANN-momentum-mesoscale/tree/main/configurations/NeverWorld2) and global [OM4](https://github.com/m2lines/ANN-momentum-mesoscale/tree/main/configurations/OM4) ocean configurations
 * Weights of trained ANN parameterization used in the paper are in [CM26_ML_models/ocean3d/subfilter/FGR3/hidden-layer-20/seed-default/model/Tall.nc](https://github.com/m2lines/ANN-momentum-mesoscale/tree/main/CM26_ML_models/ocean3d/subfilter/FGR3/hidden-layer-20/seed-default/model). Additional seeds and ANN with more neurons are provided in [CM26_ML_models/ocean3d/subfilter/FGR3/](https://github.com/m2lines/ANN-momentum-mesoscale/tree/main/CM26_ML_models/ocean3d/subfilter/FGR3)
+* The files required to run online experiments in idealizes and global ocean configurations are provided in folders [configurations/Neverworld2](https://github.com/m2lines/ANN-momentum-mesoscale/tree/main/configurations/NeverWorld2) and [configurations/OM4](https://github.com/m2lines/ANN-momentum-mesoscale/tree/main/configurations/OM4), respectively
 
-## Training ANN on CM2.6 global ocean data
+## Training ANN on global ocean data CM2.6
+### Downloading raw CM2.6 data
+
+### Filtering/coarsegraining and computing subfilter forcing
+
+### Training algorithm
 Training algorithm executes [training loop](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/helpers/train_ann.py#L110) on CPUs via the following script:
 ```
 cd src/training-on-CM2.6/scripts/
