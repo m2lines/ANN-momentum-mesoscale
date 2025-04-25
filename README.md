@@ -12,7 +12,7 @@ This repository contains training algorithm and MOM6 ocean model with implemente
 ### Filtering/coarsegraining and computing subfilter forcing
 
 ### Training algorithm
-[Training loop](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/helpers/train_ann.py#L110) is executed on CPUs via the following script:
+[Training loop](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/helpers/train_ann.py#L110) is executed on CPUs via the following [script](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/scripts/train_script.py):
 ```
 cd src/training-on-CM2.6/scripts/
 python train_script.py
