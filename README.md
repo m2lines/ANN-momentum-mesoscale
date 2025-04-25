@@ -8,7 +8,12 @@ This repository contains training algorithm and MOM6 ocean model with implemente
 
 ## Training ANN on global ocean data CM2.6
 ### Downloading raw CM2.6 data
-
+Raw data at resolution $1/10^\circ$ subsampled in vertical and time dimensions is downloaded from the cloud using [script](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/scripts/download_raw_data.py):
+```
+cd src/training-on-CM2.6/scripts/
+python download_raw_data.py
+```
+Make sure to create `PATH`.
 ### Filtering/coarsegraining and computing subfilter forcing
 
 ### Training algorithm
