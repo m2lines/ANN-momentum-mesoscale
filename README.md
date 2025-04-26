@@ -14,7 +14,7 @@ cd src/training-on-CM2.6/scripts/
 python download_raw_data.py
 ```
 Make sure to set [PATH](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/scripts/download_raw_data.py#L11) variable.
-### Filtering/coarsegraining and computing subfilter forcing
+### Filtering and coarsegraining
 Dataset for each coarsegraining factor (out of `[4,9,12,15]` required) is generated with the [script](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/scripts/generate_3d_datasets.py):
 ```
 cd src/training-on-CM2.6/scripts/
