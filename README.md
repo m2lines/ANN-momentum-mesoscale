@@ -22,10 +22,12 @@ python generate_3d_datasets --factor=4
 ```
 Make sure to provide path to `rawdata` in [training-on-CM2.6/helpers/cm26.py](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/helpers/cm26.py#L120) and to coarsened data to be created in 
  [cm26.py](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/helpers/cm26.py#L16) and [script](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/scripts/generate_3d_datasets.py).
-### Training algorithm
+### Training algorithm and evaluation
 [Training loop](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/helpers/train_ann.py#L110) is executed on CPUs via the following [script](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/scripts/train_script.py):
 ```
 cd src/training-on-CM2.6/scripts/
 python train_script.py
 ```
-This script [contains](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/scripts/train_script.py#L19-L32) the default hyperparameters used in the paper.
+Make sure to provide path where to save the trained ANN. This script [contains](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/scripts/train_script.py#L19-L32) the default hyperparameters used in the paper. The skill on the testing dataset will be available in `{path_save}/skill-test/factor-{factor}.nc` and log of training/valudation losses in `{path_save}/model/logger.nc`.
+
+## Plotting Figures 
