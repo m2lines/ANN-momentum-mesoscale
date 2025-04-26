@@ -8,14 +8,19 @@ This repository contains training algorithm and MOM6 ocean model with implemente
 
 ## Training ANN on global ocean data CM2.6
 ### Downloading raw CM2.6 data
-Raw data at resolution $1/10^\circ$ subsampled in vertical and time dimensions is downloaded from the cloud using [script](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/scripts/download_raw_data.py):
+Raw data at resolution $1/10^\circ$ subsampled and splitted in time dimension is downloaded from the cloud using [script](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/scripts/download_raw_data.py):
 ```
 cd src/training-on-CM2.6/scripts/
 python download_raw_data.py
 ```
 Make sure to create `PATH`.
 ### Filtering/coarsegraining and computing subfilter forcing
-
+Dataset for each coarsegraining factor (out of `[4,9,12,15]` required) is generated with the [script](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/scripts/generate_3d_datasets.py):
+```
+python generate_3d_datasets --factor=4
+```
+Make sure to provide path to `rawdata` in [training-on-CM2.6/helpers/cm26.py](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/helpers/cm26.py#L120) and to coarsened data to be created in 
+ [cm26.py](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/helpers/cm26.py#L16) and [script](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/scripts/generate_3d_datasets.py).
 ### Training algorithm
 [Training loop](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/helpers/train_ann.py#L110) is executed on CPUs via the following [script](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/scripts/train_script.py):
 ```
