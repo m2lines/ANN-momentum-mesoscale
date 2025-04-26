@@ -28,6 +28,6 @@ Make sure to provide path to `rawdata` in [training-on-CM2.6/helpers/cm26.py](ht
 cd src/training-on-CM2.6/scripts/
 python train_script.py
 ```
-Make sure to provide path where to save the trained ANN. This script [contains](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/scripts/train_script.py#L19-L32) the default hyperparameters used in the paper. The skill on the testing dataset will be available in `{path_save}/skill-test/factor-{factor}.nc` and log of training/valudation losses in `{path_save}/model/logger.nc`.
+Make sure to provide [path](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/scripts/train_script.py#L38) where to save the trained ANN. This script [contains](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/scripts/train_script.py#L19-L32) the default hyperparameters used in the paper. The skill on the testing dataset will be available in `{path_save}/skill-test/factor-{factor}.nc` and log of training/valudation losses in `{path_save}/model/logger.nc`.
 
 ## Plotting Figures 
