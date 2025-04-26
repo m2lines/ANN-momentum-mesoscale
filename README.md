@@ -7,6 +7,7 @@ This repository contains training algorithm and MOM6 ocean model with implemente
 * The files required to run online experiments in idealizes and global ocean configurations are provided in folders [configurations/Neverworld2](https://github.com/m2lines/ANN-momentum-mesoscale/tree/main/configurations/NeverWorld2) and [configurations/OM4](https://github.com/m2lines/ANN-momentum-mesoscale/tree/main/configurations/OM4), respectively
 
 ## Training ANN on global ocean data CM2.6
+The ANN parameterization with local dimensional scaling is defined in Python code in [training-on-CM2.6/helpers/state_functions.py](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/helpers/state_functions.py#L1328). Below we describe how to produce training data and run training algorithm.
 ### Downloading raw CM2.6 data
 Raw data at resolution $1/10^\circ$ subsampled and splitted in time dimension is downloaded from the cloud using [script](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/scripts/download_raw_data.py):
 ```
