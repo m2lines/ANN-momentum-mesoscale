@@ -17,6 +17,7 @@ Make sure to create `PATH`.
 ### Filtering/coarsegraining and computing subfilter forcing
 Dataset for each coarsegraining factor (out of `[4,9,12,15]` required) is generated with the [script](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/scripts/generate_3d_datasets.py):
 ```
+cd src/training-on-CM2.6/scripts/
 python generate_3d_datasets --factor=4
 ```
 Make sure to provide path to `rawdata` in [training-on-CM2.6/helpers/cm26.py](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/helpers/cm26.py#L120) and to coarsened data to be created in 
