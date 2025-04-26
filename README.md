@@ -13,7 +13,7 @@ Raw data at resolution $1/10^\circ$ subsampled and splitted in time dimension is
 cd src/training-on-CM2.6/scripts/
 python download_raw_data.py
 ```
-Make sure to create `PATH`.
+Make sure to check `PATH` variable.
 ### Filtering/coarsegraining and computing subfilter forcing
 Dataset for each coarsegraining factor (out of `[4,9,12,15]` required) is generated with the [script](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/scripts/generate_3d_datasets.py):
 ```
