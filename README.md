@@ -1,6 +1,9 @@
 # ANN parameterization of mesoscale momentum fluxes in ocean model MOM6
 This repository contains training algorithm and MOM6 ocean model with implemented parameterization. Additionally, we include figure plotting notebooks for the paper "Generalizable neural-network parameterization of mesoscale eddies in idealized and global ocean models" by Pavel Perezhogin, Laure Zanna and Alistair Adcroft, to be submitted soon.
 
+## Paper figures
+In folder [notebooks](https://github.com/m2lines/ANN-momentum-mesoscale/tree/main/notebooks) we show Jupyter notebooks for each Figure plotted in the paper.
+
 ## MOM6 online experiments
 * The folder [src/MOM6](https://github.com/m2lines/ANN-momentum-mesoscale/tree/main/src) contains the ocean model source code with [implemented ANN parameterization](https://github.com/Pperezhogin/MOM6/blob/m2lines-mesoscale-ann/src/parameterizations/lateral/MOM_Zanna_Bolton.F90#L668). No additional software is required.
 * Weights of trained ANN parameterization used in the paper are in [CM26_ML_models/ocean3d/subfilter/FGR3/hidden-layer-20/seed-default/model/Tall.nc](https://github.com/m2lines/ANN-momentum-mesoscale/tree/main/CM26_ML_models/ocean3d/subfilter/FGR3/hidden-layer-20/seed-default/model). Additional seeds and ANN with more neurons are provided in [CM26_ML_models/ocean3d/subfilter/FGR3/](https://github.com/m2lines/ANN-momentum-mesoscale/tree/main/CM26_ML_models/ocean3d/subfilter/FGR3)
@@ -30,5 +33,3 @@ cd src/training-on-CM2.6/scripts/
 python train_script.py
 ```
 Make sure to provide [path](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/scripts/train_script.py#L38) where to save the trained ANN. This script [contains](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/scripts/train_script.py#L19-L32) the default hyperparameters used in the paper. The skill on the testing dataset will be available in `{path_save}/skill-test/factor-{factor}.nc` and log of training/valudation losses in `{path_save}/model/logger.nc`.
-
-## Plotting Figures 
