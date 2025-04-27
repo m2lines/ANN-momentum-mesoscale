@@ -534,9 +534,10 @@ class DatasetCM26():
         '''
 
         data = xr.Dataset()
+        param = self.param
         for key in ['SGSx', 'SGSy', 'u', 'v', 'Txx', 'Txy', 'Tyy', 'sh_xx', 'sh_xy_h', 'div']:
             try:
-                data[key] = self.data[key].copy(deep=True).compute()
+                data[key] = self.nanvar(self.data[key]).copy(deep=True).compute()
             except:
                 pass
         
@@ -553,12 +554,12 @@ class DatasetCM26():
             for zl in range(len(self.data.zl)):
                 batch = self.select2d(time=time,zl=zl)
                 prediction = batch.state.ANN(ann_Txy, ann_Txx_Tyy, ann_Tall, **kw)
-                data['ZB20u'][{'time':time, 'zl':zl}] = prediction['ZB20u']
-                data['ZB20v'][{'time':time, 'zl':zl}] = prediction['ZB20v']
+                data['ZB20u'][{'time':time, 'zl':zl}] = prediction['ZB20u'].where(param.wet_u[zl])
+                data['ZB20v'][{'time':time, 'zl':zl}] = prediction['ZB20v'].where(param.wet_v[zl])
                 try:
-                    data['Txx_pred'][{'time':time, 'zl':zl}] = prediction['Txx']
-                    data['Tyy_pred'][{'time':time, 'zl':zl}] = prediction['Tyy']
-                    data['Txy_pred'][{'time':time, 'zl':zl}] = prediction['Txy']
+                    data['Txx_pred'][{'time':time, 'zl':zl}] = prediction['Txx'].where(param.wet[zl])
+                    data['Tyy_pred'][{'time':time, 'zl':zl}] = prediction['Tyy'].where(param.wet[zl])
+                    data['Txy_pred'][{'time':time, 'zl':zl}] = prediction['Txy'].where(param.wet[zl])
                 except:
                     pass
         
@@ -573,17 +574,17 @@ class DatasetCM26():
         data = xr.Dataset()
         for key in ['SGSx', 'SGSy', 'u', 'v', 'Txx', 'Txy', 'Tyy', 'sh_xx', 'sh_xy_h', 'div']:
             try:
-                data[key] = self.data[key].copy(deep=True).compute()
+                data[key] = self.nanvar(self.data[key].copy(deep=True)).compute()
             except:
                 pass
         
         ZB20 = self.state.ZB20(**kw)
 
         for key in ['ZB20u', 'ZB20v']:
-            data[key] = ZB20[key].compute()
+            data[key] = self.nanvar(ZB20[key]).compute()
 
         for key in ['Txx', 'Tyy', 'Txy']:
-            data[f'{key}_pred'] = ZB20[key].compute()
+            data[f'{key}_pred'] = self.nanvar(ZB20[key]).compute()
         
         gc.collect()
         return DatasetCM26(data.transpose('time','zl',...), self.param)
@@ -605,9 +606,9 @@ class DatasetCM26():
         ZB20v = self.data.ZB20v
 
         # 2 grid points away from coast
-        wet2 = propagate_mask(self.param.wet, self.grid, niter=2)
-        wet2_u = propagate_mask(self.param.wet_u, self.grid, niter=2)
-        wet2_v = propagate_mask(self.param.wet_v, self.grid, niter=2)
+        wet2 = xr.where(propagate_mask(self.param.wet, self.grid, niter=2) < 0.5, np.nan, 1.)
+        wet2_u = xr.where(propagate_mask(self.param.wet_u, self.grid, niter=2) < 0.5, np.nan, 1.)
+        wet2_v = xr.where(propagate_mask(self.param.wet_v, self.grid, niter=2) < 0.5, np.nan, 1.)
 
         ############# R-squared and correlation ##############
         # Here we define second moments
@@ -630,12 +631,20 @@ class DatasetCM26():
             else:
                 return (x*y).mean(dims)
 
-        def M2u(x,y=None,centered=False,dims='time'):
-            return grid.interp(M2(x,y,centered,dims),'X')
-        def M2v(x,y=None,centered=False,dims='time'):
-            return grid.interp(M2(x,y,centered,dims),'Y')
+        def M2u(x,y=None,centered=False,dims='time',mask=None):
+            return grid.interp(M2(x,y,centered,dims,mask=mask),'X')
+        def M2v(x,y=None,centered=False,dims='time',mask=None):
+            return grid.interp(M2(x,y,centered,dims,mask=mask),'Y')
         
         skill = xr.Dataset()
+
+        # Save masks
+        skill['wet'] = xr.where(self.param.wet < 0.5, np.nan, 1.)
+        skill['wet_u'] = xr.where(self.param.wet_u < 0.5, np.nan, 1.)
+        skill['wet_v'] = xr.where(self.param.wet_v < 0.5, np.nan, 1.)
+        skill['wet2'] = wet2
+        skill['wet2_u'] = wet2_u
+        skill['wet2_v'] = wet2_v
         
         try:
             Txx_pred = self.data.Txx_pred
@@ -651,10 +660,18 @@ class DatasetCM26():
             errxy = Txy - Txy_pred
 
             skill['R2T_map'] = 1 - (M2(errxx, dims='time') + M2(erryy, dims='time') + M2(errxy, dims='time')) / (M2(Txx, dims='time') + M2(Tyy, dims='time') + M2(Txy, dims='time'))
+            skill['R2T_map_centered'] = 1 - (M2(errxx, dims='time') + M2(erryy, dims='time') + M2(errxy, dims='time')) / (M2(Txx, dims='time', centered=True) + M2(Tyy, dims='time', centered=True) + M2(Txy, dims='time', centered=True))
             skill['RMSET_map']  = np.sqrt(M2(errxx, dims='time') + M2(erryy, dims='time') + M2(errxy, dims='time'))
 
             skill['R2T'] = 1 - (M2(errxx) + M2(erryy) + M2(errxy)) / (M2(Txx) + M2(Tyy) + M2(Txy))
+            skill['R2T_centered'] = 1 - (M2(errxx) + M2(erryy) + M2(errxy)) / (M2(Txx,centered=True) + M2(Tyy,centered=True) + M2(Txy,centered=True))
             skill['R2T_away'] = 1 - (M2(errxx, mask=wet2) + M2(erryy, mask=wet2) + M2(errxy, mask=wet2)) / (M2(Txx, mask=wet2) + M2(Tyy, mask=wet2) + M2(Txy, mask=wet2))
+            skill['R2T_away_centered'] = 1 - (M2(errxx, mask=wet2) + M2(erryy, mask=wet2) + M2(errxy, mask=wet2)) / (M2(Txx, mask=wet2, centered=True) + M2(Tyy, mask=wet2, centered=True) + M2(Txy, mask=wet2, centered=True))
+            
+            kw = dict(dims=['time', 'xh'])
+            skill['R2T_lon_centered'] = 1 - (M2(errxx,**kw) + M2(erryy,**kw) + M2(errxy,**kw)) / (M2(Txx,centered=True,**kw) + M2(Tyy,centered=True,**kw) + M2(Txy,centered=True,**kw))
+            skill['R2T_lon'] = 1 - (M2(errxx,**kw) + M2(erryy,**kw) + M2(errxy,**kw)) / (M2(Txx,**kw) + M2(Tyy,**kw) + M2(Txy,**kw))
+            skill['R2T_lon_away'] = 1 - (M2(errxx,mask=wet2,**kw) + M2(erryy,mask=wet2,**kw) + M2(errxy,mask=wet2,**kw)) / (M2(Txx,mask=wet2,**kw) + M2(Tyy,mask=wet2,**kw) + M2(Txy,mask=wet2,**kw))
 
             skill['corr_Txx'] = M2(Txx,Txx_pred,centered=True) \
                       / np.sqrt(M2(Txx,centered=True) * M2(Txx_pred,centered=True))
@@ -691,6 +708,9 @@ class DatasetCM26():
             skill['Txy_pred'] = Txy_pred.isel(time=0)
             skill['Tyy_pred'] = Tyy_pred.isel(time=0)
 
+            skill['SGS_KE'] = - 0.5 * (skill['Txx'] + skill['Tyy'])
+            skill['SGS_KE_pred'] = - 0.5 * (skill['Txx_pred'] + skill['Tyy_pred'])
+
             skill['sh_xx'] = data['sh_xx'].isel(time=0)
             skill['div'] = data['div'].isel(time=0)
             skill['sh_xy_h'] = data['sh_xy_h'].isel(time=0)
@@ -722,10 +742,15 @@ class DatasetCM26():
         skill['ZB20v_std'] = ZB20v.std('time')
 
         # These metrics are same as in GZ21 work
-        # Note: eveything is uncentered
+        # Note: everything is uncentered
         skill['R2u_map'] = 1 - M2u(errx) / M2u(SGSx)
         skill['R2v_map'] = 1 - M2v(erry) / M2v(SGSy)
         skill['R2_map']  = 1 - (M2u(errx) + M2v(erry)) / (M2u(SGSx) + M2v(SGSy))
+        skill['R2_map_centered']  = 1 - (M2u(errx) + M2v(erry)) / (M2u(SGSx,centered=True) + M2v(SGSy,centered=True))
+
+        skill['R2_lon_centered'] = 1 - (M2(errx,dims=['xq','time']) + M2v(erry,dims=['xh','time'])) / (M2(SGSx,centered=True,dims=['xq','time']) + M2v(SGSy,centered=True,dims=['xh','time']))
+        skill['R2_lon'] = 1 - (M2(errx,dims=['xq','time']) + M2v(erry,dims=['xh','time'])) / (M2(SGSx,dims=['xq','time']) + M2v(SGSy,dims=['xh','time']))
+        skill['R2_lon_away'] = 1 - (M2(errx,dims=['xq','time'],mask=wet2_u) + M2v(erry,dims=['xh','time'],mask=wet2_v)) / (M2(SGSx,dims=['xq','time'],mask=wet2_u) + M2v(SGSy,dims=['xh','time'],mask=wet2_v))
 
         skill['RMSE_map']  = np.sqrt(M2u(errx) + M2v(erry))
 
@@ -739,8 +764,10 @@ class DatasetCM26():
         skill['R2u'] = 1 - M2(errx) / M2(SGSx)
         skill['R2v'] = 1 - M2(erry) / M2(SGSy)
         skill['R2'] = 1 - (M2(errx) + M2(erry)) / (M2(SGSx) + M2(SGSy))
+        skill['R2_centered'] = 1 - (M2(errx) + M2(erry)) / (M2(SGSx,centered=True) + M2(SGSy,centered=True))
         
         skill['R2_away'] = 1 - (M2(errx, mask=wet2_u) + M2(erry, mask=wet2_v)) / (M2(SGSx, mask=wet2_u) + M2(SGSy, mask=wet2_v))
+        skill['R2_away_centered'] = 1 - (M2(errx, mask=wet2_u) + M2(erry, mask=wet2_v)) / (M2(SGSx, mask=wet2_u, centered=True) + M2(SGSy, mask=wet2_v, centered=True))
 
         skill['corru'] = M2(SGSx,ZB20u,centered=True) \
             / np.sqrt(M2(SGSx,centered=True) * M2(ZB20u,centered=True))

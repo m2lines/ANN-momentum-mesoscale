@@ -536,10 +536,10 @@ class StateFunctions():
             print('Error: wrong region')
             
         # Select desired Lon-Lat square
-        u = select_LatLon(self.data.u,time=slice(None,None),**kw)
-        v = select_LatLon(self.data.v,time=slice(None,None),**kw)
-        fu = select_LatLon(fu_in,time=slice(None,None),**kw)
-        fv = select_LatLon(fv_in,time=slice(None,None),**kw)
+        u = select_LatLon(self.data.u,time=slice(None,None),**kw).fillna(0.)
+        v = select_LatLon(self.data.v,time=slice(None,None),**kw).fillna(0.)
+        fu = select_LatLon(fu_in,time=slice(None,None),**kw).fillna(0.)
+        fv = select_LatLon(fv_in,time=slice(None,None),**kw).fillna(0.)
         
         if u.shape != v.shape:
             nx = min(len(x_coord(u)), len(x_coord(v)))
@@ -658,12 +658,12 @@ class StateFunctions():
         # Select desired Lon-Lat square
         sh_xy, sh_xx, _, div = self.velocity_gradients()
         sh_xy = self.grid.interp(sh_xy, ['X', 'Y'])
-        sh_xy = select_LatLon(sh_xy,time=slice(None,None),**kw)
-        sh_xx = select_LatLon(sh_xx,time=slice(None,None),**kw)
-        div = select_LatLon(div,time=slice(None,None),**kw)
-        Txx = select_LatLon(Txx_in,time=slice(None,None),**kw)
-        Tyy = select_LatLon(Tyy_in,time=slice(None,None),**kw)
-        Txy = select_LatLon(Txy_in,time=slice(None,None),**kw)
+        sh_xy = select_LatLon(sh_xy,time=slice(None,None),**kw).fillna(0.)
+        sh_xx = select_LatLon(sh_xx,time=slice(None,None),**kw).fillna(0.)
+        div = select_LatLon(div,time=slice(None,None),**kw).fillna(0.)
+        Txx = select_LatLon(Txx_in,time=slice(None,None),**kw).fillna(0.)
+        Tyy = select_LatLon(Tyy_in,time=slice(None,None),**kw).fillna(0.)
+        Txy = select_LatLon(Txy_in,time=slice(None,None),**kw).fillna(0.)
 
         # Average grid spacing (result in metres)
         dx = select_LatLon(self.param.dxT,**kw).mean().values
