@@ -3,7 +3,9 @@ This repository contains training algorithm and MOM6 ocean model with implemente
 
 Example of online simulation with the proposed ANN parameterization in the idealized configuration NeverWorld2 of the MOM6 ocean model [NW2-movie.ipynb](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/assets/NW2-movie.ipynb):
 
-![](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/assets/NW2-gif.gif)
+<div align="center">
+  <img src="https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/assets/NW2-gif.gif" alt="Example GIF" />
+</div>
 
 ## Paper figures
 In folder [notebooks](https://github.com/m2lines/ANN-momentum-mesoscale/tree/main/notebooks) we show Jupyter notebooks for each Figure plotted in the paper.
