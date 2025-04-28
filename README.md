@@ -1,6 +1,8 @@
 # ANN parameterization of mesoscale momentum fluxes in ocean model MOM6
 This repository contains training algorithm and MOM6 ocean model with implemented parameterization. Additionally, we include figure plotting notebooks for the paper "Generalizable neural-network parameterization of mesoscale eddies in idealized and global ocean models" by Pavel Perezhogin, Laure Zanna and Alistair Adcroft, to be submitted soon.
 
+![](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/assets/NW2-gif.gif)
+
 ## Paper figures
 In folder [notebooks](https://github.com/m2lines/ANN-momentum-mesoscale/tree/main/notebooks) we show Jupyter notebooks for each Figure plotted in the paper.
 
