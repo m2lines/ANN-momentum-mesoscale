@@ -33,3 +33,6 @@ cd src/training-on-CM2.6/scripts/
 python train_script.py
 ```
 Make sure to provide [path](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/scripts/train_script.py#L38) where to save the trained ANN. This script [contains](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/scripts/train_script.py#L19-L32) the default hyperparameters used in the paper. The skill on the testing dataset will be available in `{path_save}/skill-test/factor-{factor}.nc` and log of training/valudation losses in `{path_save}/model/logger.nc`.
+
+## Filtering and offline analysis in idealized configuration NW2
+Filtered dataset with diagnosed subfilter fluxes in idealized configuration NW2 is constructed using scripts [filter-NW2-data.py](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/offline-NW2/filter-NW2-data.py) and [filter-interfaces-GM-filter.py](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/offline-NW2/filter-interfaces-GM-filter.py). Second script is optional and used only to more accurately estimate APE in outcropping regions.
