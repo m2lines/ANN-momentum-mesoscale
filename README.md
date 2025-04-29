@@ -11,7 +11,7 @@ Example of online simulation with the proposed ANN parameterization in the ideal
 In folder [notebooks](https://github.com/m2lines/ANN-momentum-mesoscale/tree/main/notebooks) we show Jupyter notebooks for each Figure plotted in the paper.
 
 ## MOM6 online experiments
-* The folder [src/MOM6](https://github.com/m2lines/ANN-momentum-mesoscale/tree/main/src) contains the ocean model source code with [implemented ANN parameterization](https://github.com/Pperezhogin/MOM6/blob/m2lines-mesoscale-ann/src/parameterizations/lateral/MOM_Zanna_Bolton.F90#L668). No additional software is required.
+* The folder [src/MOM6](https://github.com/m2lines/ANN-momentum-mesoscale/tree/main/src) contains the ocean model source code with [implemented ANN parameterization](https://github.com/m2lines/MOM6/blob/dev/m2lines/src/parameterizations/lateral/MOM_Zanna_Bolton.F90#L661). No additional software is required.
 * Weights of trained ANN parameterization used in the paper are in [CM26_ML_models/ocean3d/subfilter/FGR3/hidden-layer-20/seed-default/model/Tall.nc](https://github.com/m2lines/ANN-momentum-mesoscale/tree/main/CM26_ML_models/ocean3d/subfilter/FGR3/hidden-layer-20/seed-default/model). Additional seeds and ANN with more neurons are provided in [CM26_ML_models/ocean3d/subfilter/FGR3/](https://github.com/m2lines/ANN-momentum-mesoscale/tree/main/CM26_ML_models/ocean3d/subfilter/FGR3)
 * The files required to run online experiments in idealizes and global ocean configurations are provided in folders [configurations/Neverworld2](https://github.com/m2lines/ANN-momentum-mesoscale/tree/main/configurations/NeverWorld2) and [configurations/OM4](https://github.com/m2lines/ANN-momentum-mesoscale/tree/main/configurations/OM4), respectively
 
