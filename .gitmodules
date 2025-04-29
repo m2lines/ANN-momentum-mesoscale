@@ -1,7 +1,7 @@
 [submodule "src/MOM6"]
 	path = src/MOM6
-	url = git@github.com:Pperezhogin/MOM6.git
-	branch = m2lines-mesoscale-ann
+	url = git@github.com:m2lines/MOM6.git
+	branch = dev/m2lines
 [submodule "src/analysis-of-global-ocean"]
 	path = src/analysis-of-global-ocean
 	url = git@github.com:m2lines/Analysis-of-global-ocean-simulations-OM4.git
