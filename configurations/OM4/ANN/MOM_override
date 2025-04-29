@@ -4,8 +4,6 @@
 #override WRITE_GEOM = 2
 
 #override USE_ZB2020 = True
-#override ZB_SCALING = 1.0
-#override USE_ANN = 3
-#override ANN_TRUE_VORTICITY = True
-
-#override ANN_FILE_TALL = INPUT/CM26_ML_models/ocean3d/subfilter/FGR3/hidden-layer-20/seed-default/model/Tall.nc
+#override ZB2020_USE_ANN = True
+#override ZB2020_ANN_FILE_TALL = INPUT/CM26_ML_models/ocean3d/subfilter/FGR3/hidden-layer-20/seed-default/model/Tall.nc
+#override USE_CIRCULATION_IN_HORVISC = True

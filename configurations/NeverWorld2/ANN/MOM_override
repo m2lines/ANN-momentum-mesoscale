@@ -6,11 +6,10 @@ DT = 600.
 #override SMAG_BI_CONST = 0.06
 
 #override MAXTRUNC = 100000
+
 #override USE_ZB2020 = True
-#override ZB_SCALING = 1.0
-#override USE_ANN = 3
-#override ANN_TRUE_VORTICITY = True
+#override ZB2020_USE_ANN = True
+#override ZB2020_ANN_FILE_TALL = INPUT/CM26_ML_models/ocean3d/subfilter/FGR3/hidden-layer-20/seed-default/model/Tall.nc
+#override USE_CIRCULATION_IN_HORVISC = True
 #override ZB_KLOWER_R_DISS = 1.0
 #override ZB_KLOWER_SHEAR = 1
-
-#override ANN_FILE_TALL = INPUT/CM26_ML_models/ocean3d/subfilter/FGR3/hidden-layer-20/seed-default/model/Tall.nc
