@@ -1,4 +1,4 @@
-Changes introduced to MOM6 source code in order to implement ANN parameterization are shown in mom6_modifications.patch
+Changes introduced to MOM6 source code in order to implement ANN parameterization are shown in [mom6_modifications.patch](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/mom6_modifications.patch)
 
 To see changes, do:
 ```
