@@ -1,4 +1,4 @@
-Changes introduced to MOM6 source code in order to implement ANN parameterization are stored in [mom6_modifications.patch](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/mom6_modifications.patch) and can be replicated as follows:
+Changes introduced to MOM6 source code in order to implement ANN parameterization are stored in [mom6_modifications.patch](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/mom6_modifications.patch) and can be replicated as follows (this feature is implemented only for long-term storage of source code on Zenodo):
 ```
 git clone --recursive git@github.com:NOAA-GFDL/MOM6.git MOM6-test
 cd MOM6-test
