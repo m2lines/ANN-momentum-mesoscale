@@ -10,6 +10,11 @@ Example of online simulation with the proposed ANN parameterization in the ideal
 ## Paper figures
 In folder [notebooks](https://github.com/m2lines/ANN-momentum-mesoscale/tree/main/notebooks) we show Jupyter notebooks for each Figure plotted in the paper.
 
+## Installation
+```
+git clone --recursive git@github.com:m2lines/ANN-momentum-mesoscale.git
+```
+
 ## MOM6 online experiments
 * The submodule [src/MOM6](https://github.com/m2lines/ANN-momentum-mesoscale/tree/main/src) contains the ocean model source code with [implemented ANN parameterization](https://github.com/m2lines/MOM6/blob/89f1fb391d05d3f52549e4f74c74a4b4d6c01960/src/parameterizations/lateral/MOM_Zanna_Bolton.F90#L661). No additional software is required. See [src/README.md](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/README.md) to visualize modifications to MOM6 source code.
 * Weights of trained ANN parameterization used in the paper are in [CM26_ML_models/ocean3d/subfilter/FGR3/hidden-layer-20/seed-default/model/Tall.nc](https://github.com/m2lines/ANN-momentum-mesoscale/tree/main/CM26_ML_models/ocean3d/subfilter/FGR3/hidden-layer-20/seed-default/model). Additional seeds and ANN with more neurons are provided in [CM26_ML_models/ocean3d/subfilter/FGR3/](https://github.com/m2lines/ANN-momentum-mesoscale/tree/main/CM26_ML_models/ocean3d/subfilter/FGR3)
