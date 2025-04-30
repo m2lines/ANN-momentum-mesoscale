@@ -7,6 +7,11 @@ Example of online simulation with the proposed ANN parameterization in the ideal
   <img src="https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/assets/NW2-gif.gif" alt="Example GIF" />
 </div>
 
+Online simulation in global ocean model OM4 ([full movie](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/assets/OM4-Atlantic.mp4), [code](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/assets/OM4-movie.ipynb)):
+<div align="center">
+  <img src="https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/assets/OM4-gif.gif" alt="Example GIF" />
+</div>
+
 ## Paper figures
 In folder [notebooks](https://github.com/m2lines/ANN-momentum-mesoscale/tree/main/notebooks) we show Jupyter notebooks for each Figure plotted in the paper.
 
