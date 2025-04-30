@@ -4,7 +4,6 @@ To see changes, do:
 ```
 cd MOM6
 git checkout e63a8220e
-git patch ../mom6_modifications.
-patch
+git patch ../mom6_modifications.patch
 git status
 ```
