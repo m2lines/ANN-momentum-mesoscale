@@ -7,3 +7,5 @@ git checkout e63a8220e
 git apply ../mom6_modifications.patch
 git status
 ```
+
+Submodule `analysis-of-global-ocean` can be found on [Zenodo](https://doi.org/10.5281/zenodo.15307083).
