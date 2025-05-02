@@ -28,7 +28,7 @@ git clone --recursive git@github.com:m2lines/ANN-momentum-mesoscale.git
 * The files required to run online experiments in idealized and global ocean configurations are provided in folders [configurations/Neverworld2](https://github.com/m2lines/ANN-momentum-mesoscale/tree/main/configurations/NeverWorld2) and [configurations/OM4](https://github.com/m2lines/ANN-momentum-mesoscale/tree/main/configurations/OM4), respectively
 
 # Training ANN on global ocean data CM2.6
-The ANN parameterization with local dimensional scaling is defined in Python code in [training-on-CM2.6/helpers/state_functions.py](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/helpers/state_functions.py#L1328). 
+The ANN parameterization with local dimensional scaling is executed in Python code in [training-on-CM2.6/helpers/state_functions.py](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/helpers/state_functions.py#L1328). 
 * Download training dataset from [Zenodo](https://zenodo.org/records/15328410).
 ```
 wget https://zenodo.org/records/15328410/files/factor-15.zip
