@@ -16,11 +16,9 @@ def read_datasets(keys=['train', 'test', 'validate'], factors=[4, 9, 12, 15], su
         base_path = os.path.expandvars(f'/vast/$USER/CM26_datasets/ocean3d/{subfilter}/FGR{FGR}/factor-{factor}')
         param = depth_selector(xr.open_dataset(f'{base_path}/param.nc'))
 
-        nfiles = {'train': 96, 'test': 24, 'validate': 12}
         for key in keys:
-            file_list = [f'{base_path}/{key}-{j}.nc' for j in range(nfiles[key])]
             print('Reading from folder', base_path)
-            data = xr.open_mfdataset(file_list, chunks={'zl':1, 'time':1}, concat_dim='time', combine='nested')
+            data = xr.open_mfdataset(f'{base_path}/{key}*.nc', chunks={'zl':1, 'time':1}, concat_dim='time', combine='nested').sortby('time')
             try:
                 permanent_features = xr.open_dataset(f'{base_path}/permanent_features.nc').load()
                 data = xr.merge([data, permanent_features])
