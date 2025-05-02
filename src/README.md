@@ -7,4 +7,4 @@ git apply ../mom6_modifications.patch
 git status
 ```
 
-Submodule `analysis-of-global-ocean` is additionally stored on [Zenodo](https://doi.org/10.5281/zenodo.15307083).
+Submodule `analysis-of-global-ocean` is additionally stored on [Zenodo](https://zenodo.org/records/15325780).
