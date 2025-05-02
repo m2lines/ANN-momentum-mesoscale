@@ -15,6 +15,8 @@ Online simulation in global ocean model OM4 ([full movie](https://github.com/m2l
 ## Paper figures
 In folder [notebooks](https://github.com/m2lines/ANN-momentum-mesoscale/tree/main/notebooks) we show Jupyter notebooks for each Figure plotted in the paper.
 
+## Data
+Training data, offline and online skill can be found on [Zenodo](https://doi.org/10.5281/zenodo.15325227).
 ## Installation
 ```
 git clone --recursive git@github.com:m2lines/ANN-momentum-mesoscale.git
