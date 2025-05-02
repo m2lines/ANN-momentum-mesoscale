@@ -5,4 +5,4 @@ Please note that:
 * Yankovsky24 parameterization should be run with different MOM6 branch: [ElizabethYankovsky/MOM6/tree/EBT_testing](https://github.com/ElizabethYankovsky/MOM6/tree/EBT_testing)
 * ANN experiment must be run with MOM6 branch [Pperezhogin/MOM6/tree/m2lines-mesoscale-ann](https://github.com/Pperezhogin/MOM6/tree/m2lines-mesoscale-ann). ANN weights you will find in [ANN/INPUT](https://github.com/m2lines/ANN-momentum-mesoscale/tree/main/configurations/OM4/ANN/INPUT)
 
-Raw simulation data can be found on [Zenodo](https://zenodo.org/records/15325227)
+Raw simulation data can be found on [Zenodo](https://zenodo.org/records/15328410)
