@@ -72,6 +72,7 @@ python download_raw_data.py
 cd src/training-on-CM2.6/scripts/
 python generate_3d_datasets.py --factor=4
 ```
+* Provide the path to newly generated coarse datasets in [cm26.py](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/helpers/cm26.py#L16)
 
 ## Filtering and offline analysis in idealized configuration NW2
 Filtered dataset with diagnosed subfilter fluxes in idealized configuration NW2 is constructed using scripts [filter-NW2-data.py](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/offline-NW2/filter-NW2-data.py) and [filter-interfaces-GM-filter.py](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/offline-NW2/filter-interfaces-GM-filter.py). Second script is optional and used only to more accurately estimate APE in outcropping regions. Offline prediction of subfilter fluxes and evaluation of offline skill is present in notebook [offline-analysis-NW2.ipynb](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/notebooks/offline-analysis-NW2.ipynb).
