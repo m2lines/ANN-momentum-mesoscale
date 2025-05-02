@@ -16,7 +16,7 @@ Online simulation in global ocean model OM4 ([full movie](https://github.com/m2l
 In folder [notebooks](https://github.com/m2lines/ANN-momentum-mesoscale/tree/main/notebooks) we show Jupyter notebooks for each Figure plotted in the paper.
 
 ## Data
-Training data, offline and online skill can be found on [Zenodo](https://doi.org/10.5281/zenodo.15325227).
+Training data, offline and online skill can be found on [Zenodo](https://zenodo.org/records/15328410).
 ## Installation
 ```
 git clone --recursive git@github.com:m2lines/ANN-momentum-mesoscale.git
@@ -28,11 +28,23 @@ git clone --recursive git@github.com:m2lines/ANN-momentum-mesoscale.git
 * The files required to run online experiments in idealized and global ocean configurations are provided in folders [configurations/Neverworld2](https://github.com/m2lines/ANN-momentum-mesoscale/tree/main/configurations/NeverWorld2) and [configurations/OM4](https://github.com/m2lines/ANN-momentum-mesoscale/tree/main/configurations/OM4), respectively
 
 # Training ANN on global ocean data CM2.6
-The ANN parameterization with local dimensional scaling is defined in Python code in [training-on-CM2.6/helpers/state_functions.py](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/helpers/state_functions.py#L1328). Training dataset can be found on [Zenodo](https://doi.org/10.5281/zenodo.15325227). Check the following variables to make this code work:
-* Provide [path](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/scripts/train_script.py#L38) where to save the trained ANN
-* Set [PATH](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/scripts/download_raw_data.py#L11) variable if you work with raw CM2.6 data.
-* Provide path to `rawdata` in [training-on-CM2.6/helpers/cm26.py](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/helpers/cm26.py#L120) and to coarsened data in 
- [cm26.py](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/helpers/cm26.py#L16) and [script](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/scripts/generate_3d_datasets.py#L25).
+The ANN parameterization with local dimensional scaling is defined in Python code in [training-on-CM2.6/helpers/state_functions.py](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/helpers/state_functions.py#L1328). 
+* Download training dataset from [Zenodo](https://zenodo.org/records/15328410).
+```
+wget https://zenodo.org/records/15328410/files/factor-15.zip
+wget https://zenodo.org/records/15328410/files/factor-12.zip
+wget https://zenodo.org/records/15328410/files/factor-9.zip
+wget https://zenodo.org/records/15328410/files/factor-4.zip
+```
+* Unpack dataset:
+```
+unzip factor-15.zip
+unzip factor-12.zip
+unzip factor-9.zip
+unzip factor-4.zip
+```
+* Provide path to the training data in [cm26.py](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/helpers/cm26.py#L16)
+* Provide path where to save trained ANNs in [train_script.py](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/scripts/train_script.py#L38)
 
 ## Training algorithm and evaluation
 [Training loop](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/helpers/train_ann.py#L110) is executed on CPUs via the following [script](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/scripts/train_script.py):
@@ -43,6 +55,16 @@ python train_script.py
 This script [contains](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/scripts/train_script.py#L19-L32) the default hyperparameters used in the paper. The skill on the testing dataset will be available in `{path_save}/skill-test/factor-{factor}.nc` and log of training/validation losses in `{path_save}/model/logger.nc`.
 
 ## How training data was generated
+
+
+
+Check the following variables to make this code work:
+* Provide [path](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/scripts/train_script.py#L38) where to save the trained ANN
+* Set [PATH](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/scripts/download_raw_data.py#L11) variable if you work with raw CM2.6 data.
+* Provide path to `rawdata` in [training-on-CM2.6/helpers/cm26.py](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/helpers/cm26.py#L120) and to coarsened data in 
+ [cm26.py](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/helpers/cm26.py#L16) and [script](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/scripts/generate_3d_datasets.py#L25).
+
+
 In case you want to create training data that is different from that uploaded on [Zenodo](https://doi.org/10.5281/zenodo.15325227).
 ### Downloading raw CM2.6 data
 Raw data at resolution $1/10^\circ$ subsampled and splitted in time dimension is downloaded from the cloud using [script](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/scripts/download_raw_data.py):
