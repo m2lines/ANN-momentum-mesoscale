@@ -47,7 +47,7 @@ unzip factor-4.zip
 * Provide path where to save trained ANNs in [train_script.py](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/scripts/train_script.py#L38)
 
 ## Training algorithm and evaluation
-[Training loop](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/helpers/train_ann.py#L110) is executed on CPUs via the following [script](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/scripts/train_script.py) and takes ~15 hours on 4CPU cores and 64GB memory:
+[Training loop](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/helpers/train_ann.py#L110) is executed on CPUs via the following script and takes ~15 hours on 4CPU cores and 64GB memory:
 ```
 cd src/training-on-CM2.6/scripts/
 python train_script.py
@@ -55,28 +55,24 @@ python train_script.py
 This script [contains](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/scripts/train_script.py#L19-L32) the default hyperparameters used in the paper. The skill on the testing dataset will be available in `{path_save}/skill-test/factor-{factor}.nc` and log of training/validation losses in `{path_save}/model/logger.nc`.
 
 ## How training data was generated
-
-
-
-Check the following variables to make this code work:
-* Provide [path](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/scripts/train_script.py#L38) where to save the trained ANN
-* Set [PATH](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/scripts/download_raw_data.py#L11) variable if you work with raw CM2.6 data.
-* Provide path to `rawdata` in [training-on-CM2.6/helpers/cm26.py](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/helpers/cm26.py#L120) and to coarsened data in 
- [cm26.py](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/helpers/cm26.py#L16) and [script](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/scripts/generate_3d_datasets.py#L25).
-
-
-In case you want to create training data that is different from that uploaded on [Zenodo](https://doi.org/10.5281/zenodo.15325227).
+In case you want to recreate training data yourself instead of downloading it from Zenodo, here are the instructions.
 ### Downloading raw CM2.6 data
-Raw data at resolution $1/10^\circ$ subsampled and splitted in time dimension is downloaded from the cloud using [script](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/scripts/download_raw_data.py):
+* Set where to save raw data in [download_raw_data.py](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/scripts/download_raw_data.py#L11)
+* Run the script:
 ```
 cd src/training-on-CM2.6/scripts/
 python download_raw_data.py
 ```
+* Provide path to `rawdata` in [training-on-CM2.6/helpers/cm26.py](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/helpers/cm26.py#L120) and to coarsened data in 
+ [cm26.py](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/helpers/cm26.py#L16) and [script](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/scripts/generate_3d_datasets.py#L25).
+
 ### Filtering and coarsegraining
-Dataset for each coarsegraining factor (`4,9,12,15`) is generated with the [script](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/scripts/generate_3d_datasets.py):
+* Provide path to `rawdata` in [training-on-CM2.6/helpers/cm26.py](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/helpers/cm26.py#L120)
+* Provide the path where to save coarsened data in script [generate_3d_datasets.py](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/scripts/generate_3d_datasets.py#L25)
+* Dataset for each coarsegraining factor (`4,9,12,15`) is generated with the script:
 ```
 cd src/training-on-CM2.6/scripts/
-python generate_3d_datasets --factor=4
+python generate_3d_datasets.py --factor=4
 ```
 
 ## Filtering and offline analysis in idealized configuration NW2
