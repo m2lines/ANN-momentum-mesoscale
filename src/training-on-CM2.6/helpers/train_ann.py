@@ -35,7 +35,7 @@ def train_ANN(factors=[15],
               feature_functions=[],
               gradient_features=['sh_xy', 'sh_xx', 'rel_vort'],
               permute_factors_and_depth=True,
-              subfilter='subfilter-large',
+              subfilter='subfilter',
               FGR=3):
     '''
     time_iters is the number of time snaphots

@@ -28,7 +28,7 @@ if __name__ == '__main__':
     parser.add_argument('--feature_functions', type=str, default='[]')
     parser.add_argument('--gradient_features', type=str, default="['sh_xy', 'sh_xx', 'rel_vort']")
     parser.add_argument('--permute_factors_and_depth', type=str, default='True')
-    parser.add_argument('--subfilter', type=str, default='subfilter-large')
+    parser.add_argument('--subfilter', type=str, default='subfilter')
     parser.add_argument('--FGR', type=int, default=3)
 
     parser.add_argument('--path_save', type=str, default='test')
