@@ -47,7 +47,7 @@ unzip factor-4.zip
 * Provide path where to save trained ANNs in [train_script.py](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/scripts/train_script.py#L38)
 
 ## Training algorithm and evaluation
-[Training loop](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/helpers/train_ann.py#L110) is executed on CPUs via the following script and takes ~15 hours on 4CPU cores and 64GB memory:
+[Training loop](https://github.com/m2lines/ANN-momentum-mesoscale/blob/main/src/training-on-CM2.6/helpers/train_ann.py#L110) is executed on CPUs via the following script and takes ~9 hours on 4CPU cores and 64GB memory:
 ```
 cd src/training-on-CM2.6/scripts/
 python train_script.py
