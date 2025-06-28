@@ -10,7 +10,7 @@ import itertools
 import os
 from time import time
 
-def get_SGS(batch):
+def get_subfilter_forcing(batch):
     SGSx = batch.data.SGSx
     SGSy = batch.data.SGSy
     
@@ -23,12 +23,24 @@ def get_SGS(batch):
 
     return SGSx, SGSy, SGS_norm
 
-def train_ANN(factors=[15],
+def get_subfilter_fluxes(batch):
+    Txx = tensor_from_xarray(batch.data.Txx)
+    Tyy = tensor_from_xarray(batch.data.Tyy)
+    Txy = tensor_from_xarray(batch.data.Txy)
+    
+    T_norm = 1. / torch.sqrt((Txx**2 + Tyy**2 + Txy**2).mean())
+    Txx = Txx * T_norm
+    Tyy = Tyy * T_norm
+    Txy = Txy * T_norm
+
+    return Txx, Tyy, Txy, T_norm
+
+def train_ANN(factors=[9],
               stencil_size = 3,
-              hidden_layers=[20],
+              hidden_layers=[32,32],
               dimensional_scaling=True, 
-              symmetries='False',
-              time_iters=10,
+              symmetries='All',
+              time_iters=50,
               learning_rate = 1e-3,
               depth_idx=np.arange(1),
               print_iters=1,
@@ -36,7 +48,7 @@ def train_ANN(factors=[15],
               gradient_features=['sh_xy', 'sh_xx', 'rel_vort'],
               permute_factors_and_depth=True,
               subfilter='subfilter',
-              FGR=3):
+              FGR=3, loss_function='forcing'):
     '''
     time_iters is the number of time snaphots
     randomly sampled for each factor and depth
@@ -118,7 +130,12 @@ def train_ANN(factors=[15],
             batch = dataset[f'train-{factor}'].select2d(zl=depth)
 
             ############## Training step ###############
-            SGSx, SGSy, SGS_norm = get_SGS(batch)
+            if loss_function == 'forcing':
+                SGSx, SGSy, SGS_norm = get_subfilter_forcing(batch)
+            elif loss_function == 'fluxes':
+                Txx, Tyy, Txy, T_norm = get_subfilter_fluxes(batch)
+            else:
+                print("Error: wrong value of loss_function")
 
             ######## Optionally, apply symmetries by data augmentation #########
             for rotation, reflect_x, reflect_y in augment():
@@ -129,10 +146,22 @@ def train_ANN(factors=[15],
                     feature_functions=feature_functions, gradient_features=gradient_features,
                     rotation=rotation, reflect_x=reflect_x, reflect_y=reflect_y)
 
-                ANNx = prediction['ZB20u'] * SGS_norm
-                ANNy = prediction['ZB20v'] * SGS_norm
+                if loss_function == 'forcing':
+                    ANNx = prediction['ZB20u'] * SGS_norm
+                    ANNy = prediction['ZB20v'] * SGS_norm
 
-                MSE_train = ((ANNx-SGSx)**2 + (ANNy-SGSy)**2).mean()
+                    MSE_train = ((ANNx-SGSx)**2 + (ANNy-SGSy)**2).mean()
+                elif loss_function == 'fluxes':
+                    ANNxx = prediction['Txx'] * T_norm
+                    ANNyy = prediction['Tyy'] * T_norm
+                    ANNxy = prediction['Txy'] * T_norm
+
+                    MSE_train = (
+                        (ANNxx - Txx)**2 + 
+                        (ANNyy - Tyy)**2 + 
+                        (ANNxy - Txy)**2 ).mean()
+                else:
+                    print("Error: wrong value of loss_function")
 
                 MSE_train.backward()
                 optimizer.step()
@@ -141,17 +170,36 @@ def train_ANN(factors=[15],
 
             ############ Validation step ##################
             batch = dataset[f'validate-{factor}'].select2d(zl=depth)
-            SGSx, SGSy, SGS_norm = get_SGS(batch)
+            
+            if loss_function == 'forcing':
+                SGSx, SGSy, SGS_norm = get_subfilter_forcing(batch)
+            elif loss_function == 'fluxes':
+                Txx, Tyy, Txy, T_norm = get_subfilter_fluxes(batch)
+            else:
+                print("Error: wrong value of loss_function")
 
             prediction = batch.state.Apply_ANN(None, None, ann_Tall,
                     stencil_size=stencil_size, dimensional_scaling=dimensional_scaling,
                     feature_functions=feature_functions, gradient_features=gradient_features,
                     rotation=rotation, reflect_x=reflect_x, reflect_y=reflect_y)
 
-            ANNx = prediction['ZB20u'] * SGS_norm
-            ANNy = prediction['ZB20v'] * SGS_norm
+            if loss_function == 'forcing':
+                ANNx = prediction['ZB20u'] * SGS_norm
+                ANNy = prediction['ZB20v'] * SGS_norm
 
-            MSE_validate = ((ANNx-SGSx)**2 + (ANNy-SGSy)**2).mean()
+                MSE_validate = ((ANNx-SGSx)**2 + (ANNy-SGSy)**2).mean()
+            elif loss_function == 'fluxes':
+                ANNxx = prediction['Txx'] * T_norm
+                ANNyy = prediction['Tyy'] * T_norm
+                ANNxy = prediction['Txy'] * T_norm
+
+                MSE_validate = (
+                    (ANNxx - Txx)**2 + 
+                    (ANNyy - Tyy)**2 + 
+                    (ANNxy - Txy)**2 ).mean()
+            else:
+                    print("Error: wrong value of loss_function")
+                
             del batch
         
             ########### Logging ############
