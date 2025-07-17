@@ -1,0 +1,10 @@
+! Blank file in which we can put "overrides" for parameters
+!VERBOSITY = 9
+#override RESTART_CHECKSUMS_REQUIRED = False
+#override WRITE_GEOM = 2
+
+#override USE_ZB2020 = True
+#override ZB_SCALING = 0.5
+#override ZB_SCHEME = 0
+#override ZB_KLOWER_R_DISS = 1.0
+#override ZB_KLOWER_SHEAR = 1
