@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --nodes=1
-#SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=4
+#SBATCH --ntasks-per-node=4
+#SBATCH --cpus-per-task=1
 #SBATCH --mem=64GB
 #SBATCH --begin=now
 #SBATCH --time=48:00:00
@@ -16,4 +16,4 @@
 
 #singularity exec --nv --overlay /scratch/$USER/python-container/python-overlay.ext3:ro /scratch/work/public/singularity/cuda11.6.124-cudnn8.4.0.27-devel-ubuntu20.04.4.sif /bin/bash -c "source /ext3/env.sh; time python -u train_script_fluxes.py --hidden_layers=\"[16,8]\" --path_save=flux-models/16-8-seed1 "
 
-singularity exec --nv --overlay /scratch/$USER/python-container/python-overlay.ext3:ro /scratch/work/public/singularity/cuda11.6.124-cudnn8.4.0.27-devel-ubuntu20.04.4.sif /bin/bash -c "source /ext3/env.sh; time python -u train_script.py --dimensional_scaling=False --hidden_layers=\"[32,32]\" --path_save=dimensional-scaling/no-scaling-32-32 "
+singularity exec --nv --overlay /scratch/$USER/python-container/python-overlay.ext3:ro /scratch/work/public/singularity/cuda11.6.124-cudnn8.4.0.27-devel-ubuntu20.04.4.sif /bin/bash -c "source /ext3/env.sh; time python -u train_script.py --loss_function=fluxes --dimensional_scaling=True --hidden_layers=\"[20]\" --factors=\"[9]\" --depth_idx=\"[0]\" --feature_functions=\"[]\" --time_iters=16000 --path_save=dimensional-scaling-fluxes/20/factor-9-depth-0 "
