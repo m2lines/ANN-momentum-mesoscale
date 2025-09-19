@@ -726,7 +726,59 @@ class StateFunctions():
         div = (dudx+dvdy) * param.wet # For VGM model
         
         return sh_xy.squeeze(), sh_xx.squeeze(), vort_xy.squeeze(), div.squeeze()
-    
+
+    def JansenHeld(self, Cs_biharm=0.06, backscatter_ratio=1.0):
+        '''
+        We use biharmonic Smagorinsky closure with prescribed coefficient.
+        The negative viscosity coefficient (viscosity<0) is passed as an input but
+        ideally should be determined by offline training or solving
+        subgrid kinetic energy equation, or so.
+        '''
+        # Compute negative viscosity part
+        sh_xy, sh_xx, vort_xy, _ = self.velocity_gradients()
+        grid = self.grid
+        param = self.param
+        
+        Txx = sh_xx * param.wet
+        Tyy = - Txx
+        Txy = sh_xy * param.wet_c
+
+        negviscx = param.wet_u * (grid.diff(Txx*param.dyT**2, 'X') / param.dyCu     \
+                   + grid.diff(Txy*param.dxBu**2, 'Y') / param.dxCu) \
+                   / (param.dxCu*param.dyCu)
+
+        negviscy = param.wet_v * (grid.diff(Txy*param.dyBu**2, 'X') / param.dyCv     \
+                   + grid.diff(Tyy*param.dxT**2, 'Y') / param.dxCv) \
+                   / (param.dxCv*param.dyCv)
+
+        smag = self.Smagorinsky_biharmonic(Cs_biharm=Cs_biharm)
+
+        dEdt_smag = param.dxT * param.dyT * param.wet * (grid.interp(smag['smagx'] * self.data.u, 'X') + grid.interp(smag['smagy'] * self.data.v, 'Y'))
+        dEdt_smag = dEdt_smag.sum(['xh', 'yh'])
+
+        dEdt_negvisc = param.dxT * param.dyT * param.wet * (grid.interp(negviscx * self.data.u, 'X') + grid.interp(negviscy * self.data.v, 'Y'))
+        dEdt_negvisc = dEdt_negvisc.sum(['xh', 'yh'])
+
+        viscosity = - backscatter_ratio * dEdt_smag / dEdt_negvisc
+
+        negviscx *= viscosity
+        negviscy *= viscosity
+
+        ZB20u = negviscx + smag['smagx']
+        ZB20v = negviscy + smag['smagy']
+
+        Txx = Txx * viscosity + smag['Txx']
+        Tyy = Tyy * viscosity + smag['Tyy']
+        Txy = Txy * viscosity + smag['Txy']
+        # To follow the convention on placing fluxes for
+        # offline analysis
+        Txy = grid.interp(Txy, ['X', 'Y']) * param.wet
+
+        return dict(ZB20u=ZB20u, ZB20v=ZB20v,
+                    smagx=smag['smagx'], smagy=smag['smagy'],
+                    negviscx=negviscx, negviscy=negviscy,
+                    Txx=Txx, Tyy=Tyy, Txy=Txy, viscosity=viscosity)
+
     def Smagorinsky(self, Cs_biharm=0.06):
         sh_xy, sh_xx, vort_xy, _ = self.velocity_gradients()
         grid = self.grid

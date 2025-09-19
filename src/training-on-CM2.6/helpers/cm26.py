@@ -564,11 +564,12 @@ class DatasetCM26():
         gc.collect()
         return DatasetCM26(data, self.param)
     
-    def predict_ZB(self, **kw):
+    def predict_ZB(self, fun=None, **kw):
         '''
         This function makes ANN inference on the whole dataset
         '''
-
+        if fun is None:
+            fun = self.state.ZB20
         data = xr.Dataset()
         for key in ['SGSx', 'SGSy', 'u', 'v', 'Txx', 'Txy', 'Tyy', 'sh_xx', 'sh_xy_h', 'div']:
             try:
@@ -576,7 +577,7 @@ class DatasetCM26():
             except:
                 pass
         
-        ZB20 = self.state.ZB20(**kw)
+        ZB20 = fun(**kw)
 
         for key in ['ZB20u', 'ZB20v']:
             data[key] = self.nanvar(ZB20[key]).compute()
@@ -585,7 +586,10 @@ class DatasetCM26():
             data[f'{key}_pred'] = self.nanvar(ZB20[key]).compute()
         
         gc.collect()
-        return DatasetCM26(data.transpose('time','zl',...), self.param)
+        try:
+            return DatasetCM26(data.transpose('time','zl',...), self.param)
+        except:
+            return DatasetCM26(data, self.param)
 
     def SGS_skill(self):
         '''
