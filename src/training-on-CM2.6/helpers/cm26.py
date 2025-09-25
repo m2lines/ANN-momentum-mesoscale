@@ -24,6 +24,12 @@ def read_datasets(keys=['train', 'test', 'validate'], factors=[4, 9, 12, 15], su
                 data = xr.merge([data, permanent_features])
             except:
                 pass
+            try:
+                lap_velocity = xr.open_mfdataset(f'{base_path}/lap_velocity_{key}.nc', chunks={'zl':1, 'time':1})
+                data = xr.merge([data, lap_velocity])
+            except:
+                pass
+            
             if load:
                 data = data.load()
             dictionary[f'{key}-{factor}'] = DatasetCM26(data, param)
@@ -74,20 +80,39 @@ def create_grid(param):
     return different grid object
     '''
     if 'zl' not in param.dims:
-        grid = Grid(param, coords={
-            'X': {'center': 'xh', 'right': 'xq'},
-            'Y': {'center': 'yh', 'right': 'yq'}
-        },
-        boundary={"X": 'periodic', 'Y': 'fill'},
-        fill_value = {'Y':0})
+        try:
+            grid = Grid(param, coords={
+                'X': {'center': 'xh', 'right': 'xq'},
+                'Y': {'center': 'yh', 'right': 'yq'}
+            },
+            boundary={"X": 'periodic', 'Y': 'fill'},
+            fill_value = {'Y':0},
+            autoparse_metadata=False)
+        except:
+            grid = Grid(param, coords={
+                'X': {'center': 'xh', 'right': 'xq'},
+                'Y': {'center': 'yh', 'right': 'yq'}
+            },
+            boundary={"X": 'periodic', 'Y': 'fill'},
+            fill_value = {'Y':0})
     else:
-        grid = Grid(param, coords={
-            'X': {'center': 'xh', 'right': 'xq'},
-            'Y': {'center': 'yh', 'right': 'yq'},
-            'Z': {'center': 'zl', 'outer': 'zi'}
-        },
-        boundary={"X": 'periodic', 'Y': 'fill', 'Z': 'fill'},
-        fill_value = {'Y': 0, 'Z': 0})
+        try:
+            grid = Grid(param, coords={
+                'X': {'center': 'xh', 'right': 'xq'},
+                'Y': {'center': 'yh', 'right': 'yq'},
+                'Z': {'center': 'zl', 'outer': 'zi'}
+            },
+            boundary={"X": 'periodic', 'Y': 'fill', 'Z': 'fill'},
+            fill_value = {'Y': 0, 'Z': 0},
+            autoparse_metadata=False)
+        except:
+            grid = Grid(param, coords={
+                'X': {'center': 'xh', 'right': 'xq'},
+                'Y': {'center': 'yh', 'right': 'yq'},
+                'Z': {'center': 'zl', 'outer': 'zi'}
+            },
+            boundary={"X": 'periodic', 'Y': 'fill', 'Z': 'fill'},
+            fill_value = {'Y': 0, 'Z': 0})
     return grid
 
 class DatasetCM26():

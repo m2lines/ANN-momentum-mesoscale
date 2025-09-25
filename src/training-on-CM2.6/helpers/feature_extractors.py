@@ -140,3 +140,19 @@ def rescaled_depth(self):
     depth_corner = self.grid.interp(depth_center * self.param.wet, ['X', 'Y'])
     
     return depth_corner, depth_center
+
+def d2udx2(self):
+    out = self.data.d2udx2 * 1e+10
+    return out, out
+
+def d2udy2(self):
+    out = self.data.d2udy2 * 1e+10
+    return out, out
+
+def d2vdx2(self):
+    out = self.data.d2vdx2 * 1e+10
+    return out, out
+
+def d2vdy2(self):
+    out = self.data.d2vdy2 * 1e+10
+    return out, out

@@ -185,14 +185,16 @@ def import_ANN(filename='ANN_test.nc'):
         bias = torch.tensor(ds[f'b{i}'].values)
         ann.layers[i].weight.data = matrix
         ann.layers[i].bias.data = bias
+    try:    
+        x_test = torch.tensor(ds['x_test'].values.reshape(1,-1))
+        y_pred = ann(x_test).detach()
+        y_test = ds['y_test'].values
         
-    x_test = torch.tensor(ds['x_test'].values.reshape(1,-1))
-    y_pred = ann(x_test).detach()
-    y_test = ds['y_test'].values
-    
-    rel_error = float(np.abs(y_pred - y_test).max() / np.abs(y_test).max())
-    if rel_error > 1e-6:
-        print(f'Test prediction using {filename}: {rel_error}')
+        rel_error = float(np.abs(y_pred - y_test).max() / np.abs(y_test).max())
+        if rel_error > 1e-6:
+            print(f'Test prediction using {filename}: {rel_error}')
+    except:
+        pass
     return ann
 
 class AverageLoss():

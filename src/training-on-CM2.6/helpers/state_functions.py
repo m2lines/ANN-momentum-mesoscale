@@ -1,13 +1,16 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import xarray as xr
-import torch
 import xrft
 import gsw
 from xgcm.padding import pad as xgcm_pad
 from functools import lru_cache
 
-from helpers.ann_tools import image_to_nxn_stencil_gpt, import_ANN, torch_pad, tensor_from_xarray
+try:
+    import torch
+    from helpers.ann_tools import image_to_nxn_stencil_gpt, import_ANN, torch_pad, tensor_from_xarray
+except:
+    pass
 from helpers.selectors import select_LatLon, x_coord, y_coord
 import warnings
 warnings.filterwarnings("ignore")
