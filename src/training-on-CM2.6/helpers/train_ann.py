@@ -2,7 +2,7 @@ import sys
 import numpy as np
 import xarray as xr
 from helpers.cm26 import read_datasets
-from helpers.ann_tools import ANN, tensor_from_xarray
+from helpers.ann_tools import ANN, ANN_equivariant, tensor_from_xarray
 import torch
 import torch.optim as optim
 import itertools
@@ -37,7 +37,7 @@ def get_subfilter_fluxes(batch):
 
 def train_ANN(factors=[9],
               stencil_size = 3,
-              hidden_layers=[32,32],
+              hidden_layers=[32],
               dimensional_scaling=True, 
               symmetries='All',
               time_iters=50,
@@ -48,7 +48,8 @@ def train_ANN(factors=[9],
               gradient_features=['sh_xy', 'sh_xx', 'rel_vort'],
               permute_factors_and_depth=True,
               subfilter='subfilter',
-              FGR=3, loss_function='forcing'):
+              FGR=3, loss_function='forcing',
+              equivariant = False):
     '''
     time_iters is the number of time snaphots
     randomly sampled for each factor and depth
@@ -67,9 +68,12 @@ def train_ANN(factors=[9],
                                    coords={'factor': factors, 'depth': depth_idx})
 
     ########## Init ANN ##############
-    # As default we have 3 input features on a stencil: D, D_hat and vorticity
-    num_input_features = stencil_size**2 * len(gradient_features) + len(feature_functions)
-    ann_Tall = ANN([num_input_features, *hidden_layers, 3])
+    if equivariant:
+        ann_Tall = ANN_equivariant(hidden_layer_size = hidden_layers[0], stencil_size = stencil_size)
+    else:
+        # As default we have 3 input features on a stencil: D, D_hat and vorticity
+        num_input_features = stencil_size**2 * len(gradient_features) + len(feature_functions)
+        ann_Tall = ANN([num_input_features, *hidden_layers, 3])
     
     ########## Symmetries as data augmentation ######
     def augment():
@@ -139,6 +143,7 @@ def train_ANN(factors=[9],
 
             ######## Optionally, apply symmetries by data augmentation #########
             for rotation, reflect_x, reflect_y in augment():
+                ann_Tall.train()
                 optimizer.zero_grad()
 
                 prediction = batch.state.Apply_ANN(None, None, ann_Tall,
@@ -177,7 +182,8 @@ def train_ANN(factors=[9],
                 Txx, Tyy, Txy, T_norm = get_subfilter_fluxes(batch)
             else:
                 print("Error: wrong value of loss_function")
-
+            
+            ann_Tall.eval()
             prediction = batch.state.Apply_ANN(None, None, ann_Tall,
                     stencil_size=stencil_size, dimensional_scaling=dimensional_scaling,
                     feature_functions=feature_functions, gradient_features=gradient_features,

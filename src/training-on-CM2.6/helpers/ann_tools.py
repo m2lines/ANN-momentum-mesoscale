@@ -6,6 +6,10 @@ import numpy as np
 import os
 import xarray as xr
 from time import time
+from escnn import gspaces
+from escnn import nn as nn_escnn
+from sklearn.model_selection import train_test_split
+import json
 
 def tensor_from_xarray(x, torch_type=torch.float32):
     if isinstance(x, xr.DataArray):
@@ -132,7 +136,134 @@ class ANN(nn.Module):
     def compute_loss(self, x, ytrue):
         return {'loss': nn.MSELoss()(self.forward(x), ytrue)}
 
+class ANN_equivariant(nn.Module):
+    def __init__(self, hidden_layer_size=16, stencil_size=3):
+        '''
+        As this ANN is equivariant, it strongly assumes order 
+        and meaning of all inputs and outputs.
+        We are having 
+        ['sh_xy', 'sh_xx', 'vort_xy'] inputs
+        on a stencil fo size given by stencil_size
+        The outputs are 
+        [Txy, 0.5*(Txx-Tyy), 0.5*(Txx+Tyy)]
+        which are later transformed to 
+        [Txy, Txx, Tyy]
+        for compatibility with standard ANN
+        '''
+        super().__init__()
+        
+        self.hidden_layer_size = hidden_layer_size
+        self.stencil_size = stencil_size
+        self.number_of_equivariant_hidden_neurons = hidden_layer_size//8
+
+        # Rotation and reflection group
+        r2_act = gspaces.flipRot2dOnR2(N=4)
+
+        # [sh_xy, sh_xx, vort_xy]
+        self.feat_type_in  = nn_escnn.FieldType(r2_act, [r2_act.irrep(1,2)] + [r2_act.irrep(0,2)] + [r2_act.irrep(1,0)])
+        
+        self.feat_type_hid = nn_escnn.FieldType(r2_act, self.number_of_equivariant_hidden_neurons*[r2_act.regular_repr])
+        
+        # [Txy, 0.5*(Txx-Tyy), 0.5*(Txx+Tyy)]
+        self.feat_type_out = nn_escnn.FieldType(r2_act, [r2_act.irrep(1,2)] +       
+                                            [r2_act.irrep(0,2)] + 
+                                            [r2_act.irrep(0,0)])
+
+        self.model = nn_escnn.SequentialModule(
+            nn_escnn.R2Conv(self.feat_type_in, self.feat_type_hid, kernel_size=stencil_size),
+            nn_escnn.ReLU(self.feat_type_hid),
+            nn_escnn.R2Conv(self.feat_type_hid, self.feat_type_out, kernel_size=1),
+        ).to().eval()
+    
+    def forward(self, _x):
+        '''
+        Here we assume standard input vector of size 27 as we use in ANN
+        where 27 is (3 channels)*(3 y_points)*(3 x_points)
+        '''
+        # Reshape ANN input vector to a format compatible with CNN
+        x = _x.view(-1, 3, self.stencil_size, self.stencil_size)
+
+        x = self.feat_type_in(x)
+        
+        _y = self.model(x).tensor.squeeze(-1).squeeze(-1)
+
+        # Transform from Txy, 0.5*(Txx-Tyy), 0.5*(Txx+Tyy)]
+        # back to [Txy, Txx, Tyy]
+        y0 = _y[:, 0]
+        y1 = + _y[:, 1] + _y[:, 2]
+        y2 = - _y[:, 1] + _y[:, 2]
+        y = torch.stack([y0, y1, y2], dim=1)
+
+        return y
+    
+    def count_parameters(self):
+        return sum(p.numel() for p in self.parameters())
+    
+    def compute_loss(self, x, ytrue):
+        return {'loss': nn.MSELoss()(self.forward(x), ytrue)}
+
+def equivariant_to_regular_ANN(ann_equivariant):
+    ann = ANN(layer_sizes = [3 * ann_equivariant.stencil_size**2, ann_equivariant.hidden_layer_size, 3])
+    
+    input_layer = ann_equivariant.model[0]
+    output_layer = ann_equivariant.model[2]
+
+    # Reshape is needed to transform CNN to ANN
+    ann.layers[0].weight.data = input_layer.expand_parameters()[0].reshape(ann_equivariant.hidden_layer_size, -1)
+    ann.layers[0].bias.data   = input_layer.expand_parameters()[1]
+
+    # Transform from Txy, 0.5*(Txx-Tyy), 0.5*(Txx+Tyy)]
+    # back to [Txy, Txx, Tyy]
+    output_transformation = torch.eye(3,3)
+    output_transformation[1,2] = 1
+    output_transformation[2,1] = -1
+    
+    # squeeze is required to transform 1-point CNN to ANN
+    ann.layers[1].weight.data = output_transformation @ output_layer.expand_parameters()[0].squeeze()
+    ann.layers[1].bias.data   = output_transformation @ output_layer.expand_parameters()[1]
+
+    return ann
+
+def regular_to_equivariant_ANN(ann, stencil_size = 3,
+    hidden_layer_size = None,
+    nsamples=1000000, num_epochs=10, batch_size=1000, learning_rate=0.01):
+
+    if len(ann.layers) != 2:
+        raise NotImplementedError("Current version must have only two layers. It is possible to extend it")
+
+    if hidden_layer_size is None:
+        hidden_layer_size=8*(ann.layer_sizes[1]//8)
+    ann_equivariant = ANN_equivariant(hidden_layer_size=hidden_layer_size, stencil_size=stencil_size)
+
+    # We find the optimal equivariant ANN which is as close as possible to the regular ANN
+    # by performing gradient descent on input vectors of norm 1 (as it happens in our Perezhogin 2025 et al paper)
+    X = np.random.randn(nsamples, 3 * stencil_size**2).astype('float32')
+    X = X / np.linalg.norm(X, axis=-1, keepdims=True)
+    Y = ann(torch.tensor(X)).detach().numpy()
+
+    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=42)
+
+    train(ann_equivariant, X_train, Y_train, X_test, Y_test,
+          num_epochs = num_epochs, batch_size = batch_size, learning_rate = learning_rate)
+
+    return ann_equivariant 
+    
 def export_ANN(ann, input_norms, output_norms, filename='ANN_test.nc'):
+    if isinstance(ann, ANN_equivariant):
+        '''
+        In this case we additionally save ANN in equivariant form
+        '''
+        print('Saving additionally weights of equivariant part of ANN')
+        torch_file = filename.split('.')[0]+'.pth'
+        json_file = filename.split('.')[0]+'.json'
+        torch.save(ann.state_dict(), torch_file)
+        params = dict(hidden_layer_size=ann.hidden_layer_size, stencil_size=ann.stencil_size)
+        with open(json_file, "w") as f:
+            json.dump(params, f, indent=4)
+        
+        # Save also ANN in regular format
+        ann = equivariant_to_regular_ANN(ann)
+
     ds = xr.Dataset()
     ds['num_layers'] = xr.DataArray(len(ann.layer_sizes)).expand_dims('dummy_dimension')
     ds['layer_sizes'] = xr.DataArray(ann.layer_sizes, dims=['nlayers'])
@@ -161,7 +292,6 @@ def export_ANN(ann, input_norms, output_norms, filename='ANN_test.nc'):
     ds['input_norms']  = xr.DataArray(input_norms.data, dims=['ncol0'])
     ds['output_norms'] = xr.DataArray(output_norms.data, dims=[nrow])
 
-    
     # print('x_test = ', ds['x_test'].data)
     # print('y_test = ', ds['y_test'].data)
     
@@ -195,6 +325,17 @@ def import_ANN(filename='ANN_test.nc'):
             print(f'Test prediction using {filename}: {rel_error}')
     except:
         pass
+
+    torch_file = filename.split('.')[0]+'.pth'
+    json_file = filename.split('.')[0]+'.json'
+    if os.path.exists(torch_file):
+        print('Returning equivariant ANN instead')
+        with open(json_file, "r") as f:
+            params = json.load(f)
+        print(params)
+        ann_equivariant = ANN_equivariant(**params)
+        ann_equivariant.load_state_dict(torch.load(torch_file))
+        return ann_equivariant
     return ann
 
 class AverageLoss():

@@ -18,7 +18,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--factors', type=str, default='[4,9,12,15]')
     parser.add_argument('--stencil_size', type=int, default=3)
-    parser.add_argument('--hidden_layers', type=str, default='[20]')
+    parser.add_argument('--hidden_layers', type=str, default='[16]')
     parser.add_argument('--dimensional_scaling', type=str, default='True')
     parser.add_argument('--symmetries', type=str, default='All')
     parser.add_argument('--time_iters', type=int, default=400)
@@ -31,6 +31,7 @@ if __name__ == '__main__':
     parser.add_argument('--subfilter', type=str, default='subfilter')
     parser.add_argument('--FGR', type=int, default=3)
     parser.add_argument('--loss_function', type=str, default='forcing')
+    parser.add_argument('--equivariant', type=str, default='False')
 
     parser.add_argument('--path_save', type=str, default='test')
 
@@ -51,6 +52,7 @@ if __name__ == '__main__':
     args.feature_functions = eval(args.feature_functions)
     args.gradient_features = eval(args.gradient_features)
     args.permute_factors_and_depth = eval(args.permute_factors_and_depth)
+    args.equivariant = eval(args.equivariant)
     
     ann_Tall, logger = \
         train_ANN(  args.factors,
@@ -67,9 +69,10 @@ if __name__ == '__main__':
                     args.permute_factors_and_depth,
                     args.subfilter,
                     args.FGR,
-                    args.loss_function)
+                    args.loss_function,
+                    args.equivariant)
     
-    nfeatures = ann_Tall.layer_sizes[0]
+    nfeatures = args.stencil_size**2 * len(args.gradient_features) + len(args.feature_functions)
     export_ANN(ann_Tall, input_norms=torch.ones(nfeatures), output_norms=torch.ones(3), 
                 filename=f'{path_save}/model/Tall.nc')
     
