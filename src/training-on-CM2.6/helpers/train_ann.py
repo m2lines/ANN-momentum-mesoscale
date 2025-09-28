@@ -49,7 +49,8 @@ def train_ANN(factors=[9],
               permute_factors_and_depth=True,
               subfilter='subfilter',
               FGR=3, loss_function='forcing',
-              equivariant = False):
+              equivariant = False,
+              symmetry_group='flipRot2dOnR2_N4'):
     '''
     time_iters is the number of time snaphots
     randomly sampled for each factor and depth
@@ -69,7 +70,7 @@ def train_ANN(factors=[9],
 
     ########## Init ANN ##############
     if equivariant:
-        ann_Tall = ANN_equivariant(hidden_layer_size = hidden_layers[0], stencil_size = stencil_size)
+        ann_Tall = ANN_equivariant(hidden_layer_size = hidden_layers[0], stencil_size = stencil_size, symmetry=symmetry_group)
     else:
         # As default we have 3 input features on a stencil: D, D_hat and vorticity
         num_input_features = stencil_size**2 * len(gradient_features) + len(feature_functions)

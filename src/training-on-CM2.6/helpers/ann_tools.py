@@ -137,7 +137,7 @@ class ANN(nn.Module):
         return {'loss': nn.MSELoss()(self.forward(x), ytrue)}
 
 class ANN_equivariant(nn.Module):
-    def __init__(self, hidden_layer_size=16, stencil_size=3):
+    def __init__(self, hidden_layer_size=16, stencil_size=3, symmetry='flipRot2dOnR2_N4'):
         '''
         As this ANN is equivariant, it strongly assumes order 
         and meaning of all inputs and outputs.
@@ -154,25 +154,34 @@ class ANN_equivariant(nn.Module):
         
         self.hidden_layer_size = hidden_layer_size
         self.stencil_size = stencil_size
-        self.number_of_equivariant_hidden_neurons = hidden_layer_size//8
+        self.symmetry = symmetry
 
-        # Rotation and reflection group
-        r2_act = gspaces.flipRot2dOnR2(N=4)
+        if symmetry == 'flipRot2dOnR2_N4':
+            self.number_of_equivariant_hidden_neurons = hidden_layer_size//8
+            r2_act = gspaces.flipRot2dOnR2(N=4)
+            # [sh_xy, sh_xx, vort_xy]
+            self.feat_type_in  = nn_escnn.FieldType(r2_act, [r2_act.irrep(1,2)] + [r2_act.irrep(0,2)] + [r2_act.irrep(1,0)])
+            # [Txy, 0.5*(Txx-Tyy), 0.5*(Txx+Tyy)]
+            self.feat_type_out = nn_escnn.FieldType(r2_act, [r2_act.irrep(1,2)] +       
+                                                [r2_act.irrep(0,2)] + 
+                                                [r2_act.irrep(0,0)])
+        elif symmetry == 'flipRot2dOnR2_N8':
+            self.number_of_equivariant_hidden_neurons = hidden_layer_size//16
+            r2_act = gspaces.flipRot2dOnR2(N=8)
+            # [sh_xx, sh_xy, vort_xy]
+            self.feat_type_in  = nn_escnn.FieldType(r2_act, [r2_act.irrep(1,2)] + [r2_act.irrep(1,0)])
+            # [0.5*(Txx-Tyy), Txy, 0.5*(Txx+Tyy)]
+            self.feat_type_out = nn_escnn.FieldType(r2_act, [r2_act.irrep(1,2)] + [r2_act.irrep(0,0)])
+        else:
+            raise NotImplementedError(f"We support only two symmetries: flipRot2dOnR2_N4 and flipRot2dOnR2_N8 but not {symmetry}") 
 
-        # [sh_xy, sh_xx, vort_xy]
-        self.feat_type_in  = nn_escnn.FieldType(r2_act, [r2_act.irrep(1,2)] + [r2_act.irrep(0,2)] + [r2_act.irrep(1,0)])
-        
+        # Type of hidden neurons is the same
         self.feat_type_hid = nn_escnn.FieldType(r2_act, self.number_of_equivariant_hidden_neurons*[r2_act.regular_repr])
-        
-        # [Txy, 0.5*(Txx-Tyy), 0.5*(Txx+Tyy)]
-        self.feat_type_out = nn_escnn.FieldType(r2_act, [r2_act.irrep(1,2)] +       
-                                            [r2_act.irrep(0,2)] + 
-                                            [r2_act.irrep(0,0)])
 
         self.model = nn_escnn.SequentialModule(
             nn_escnn.R2Conv(self.feat_type_in, self.feat_type_hid, kernel_size=stencil_size),
             nn_escnn.ReLU(self.feat_type_hid),
-            nn_escnn.R2Conv(self.feat_type_hid, self.feat_type_out, kernel_size=1),
+            nn_escnn.R2Conv(self.feat_type_hid, self.feat_type_out, kernel_size=1)
         ).to().eval()
     
     def forward(self, _x):
@@ -183,16 +192,31 @@ class ANN_equivariant(nn.Module):
         # Reshape ANN input vector to a format compatible with CNN
         x = _x.view(-1, 3, self.stencil_size, self.stencil_size)
 
+        if self.symmetry == 'flipRot2dOnR2_N8':
+            # Swap first two channels compared to a regular ordering
+            x0 = x[:,1]
+            x1 = x[:,0]
+            x2 = x[:,2]
+            x = torch.stack([x0,x1,x2], dim=1)
+
         x = self.feat_type_in(x)
         
         _y = self.model(x).tensor.squeeze(-1).squeeze(-1)
 
-        # Transform from Txy, 0.5*(Txx-Tyy), 0.5*(Txx+Tyy)]
-        # back to [Txy, Txx, Tyy]
-        y0 = _y[:, 0]
-        y1 = + _y[:, 1] + _y[:, 2]
-        y2 = - _y[:, 1] + _y[:, 2]
-        y = torch.stack([y0, y1, y2], dim=1)
+        if self.symmetry == 'flipRot2dOnR2_N4':
+            # Transform from Txy, 0.5*(Txx-Tyy), 0.5*(Txx+Tyy)]
+            # back to [Txy, Txx, Tyy]
+            y0 = _y[:, 0]
+            y1 = + _y[:, 1] + _y[:, 2]
+            y2 = - _y[:, 1] + _y[:, 2]
+            y = torch.stack([y0, y1, y2], dim=1)
+        elif self.symmetry == 'flipRot2dOnR2_N8':
+            # Transform from 0.5*(Txx-Tyy), Txy, 0.5*(Txx+Tyy)
+            # back to [Txy, Txx, Tyy]
+            y0 = _y[:, 1]
+            y1 = + _y[:, 0] + _y[:, 2]
+            y2 = - _y[:, 0] + _y[:, 2]
+            y = torch.stack([y0, y1, y2], dim=1)
 
         return y
     
@@ -208,15 +232,37 @@ def equivariant_to_regular_ANN(ann_equivariant):
     input_layer = ann_equivariant.model[0]
     output_layer = ann_equivariant.model[2]
 
+    if ann_equivariant.symmetry == 'flipRot2dOnR2_N4':
+        input_transformation = torch.eye(27,27)
+    elif ann_equivariant.symmetry == 'flipRot2dOnR2_N8':
+        input_transformation = torch.zeros(27,27)
+        # Swap first two variables
+        n = ann_equivariant.stencil_size**2
+        for i in range(n):
+            input_transformation[i,i+n] = 1
+            input_transformation[i+n,i] = 1
+            # Keep the third variable without change
+            input_transformation[i+2*n,i+2*n] = 1
+
     # Reshape is needed to transform CNN to ANN
-    ann.layers[0].weight.data = input_layer.expand_parameters()[0].reshape(ann_equivariant.hidden_layer_size, -1)
+    ann.layers[0].weight.data = input_layer.expand_parameters()[0].reshape(ann_equivariant.hidden_layer_size, -1) @ input_transformation
     ann.layers[0].bias.data   = input_layer.expand_parameters()[1]
 
-    # Transform from Txy, 0.5*(Txx-Tyy), 0.5*(Txx+Tyy)]
-    # back to [Txy, Txx, Tyy]
-    output_transformation = torch.eye(3,3)
-    output_transformation[1,2] = 1
-    output_transformation[2,1] = -1
+    if ann_equivariant.symmetry == 'flipRot2dOnR2_N4':
+        # Transform from Txy, 0.5*(Txx-Tyy), 0.5*(Txx+Tyy)]
+        # back to [Txy, Txx, Tyy]
+        output_transformation = torch.eye(3,3)
+        output_transformation[1,2] = 1
+        output_transformation[2,1] = -1
+    elif ann_equivariant.symmetry == 'flipRot2dOnR2_N8':
+        # Transform from 0.5*(Txx-Tyy), Txy, 0.5*(Txx+Tyy)
+        # back to [Txy, Txx, Tyy]
+        output_transformation = torch.zeros(3,3)
+        output_transformation[0,1] = 1
+        output_transformation[1,0] = 1
+        output_transformation[1,2] = 1
+        output_transformation[2,0] = -1
+        output_transformation[2,2] = +1
     
     # squeeze is required to transform 1-point CNN to ANN
     ann.layers[1].weight.data = output_transformation @ output_layer.expand_parameters()[0].squeeze()
@@ -241,7 +287,7 @@ def regular_to_equivariant_ANN(ann, stencil_size = 3,
     X = X / np.linalg.norm(X, axis=-1, keepdims=True)
     Y = ann(torch.tensor(X)).detach().numpy()
 
-    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=42)
+    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2)
 
     train(ann_equivariant, X_train, Y_train, X_test, Y_test,
           num_epochs = num_epochs, batch_size = batch_size, learning_rate = learning_rate)
@@ -257,7 +303,7 @@ def export_ANN(ann, input_norms, output_norms, filename='ANN_test.nc'):
         torch_file = filename.split('.')[0]+'.pth'
         json_file = filename.split('.')[0]+'.json'
         torch.save(ann.state_dict(), torch_file)
-        params = dict(hidden_layer_size=ann.hidden_layer_size, stencil_size=ann.stencil_size)
+        params = dict(hidden_layer_size=ann.hidden_layer_size, stencil_size=ann.stencil_size, symmetry=ann.symmetry)
         with open(json_file, "w") as f:
             json.dump(params, f, indent=4)
         
@@ -326,6 +372,7 @@ def import_ANN(filename='ANN_test.nc'):
     except:
         pass
 
+    # Import equivariant ANN if torch file is available
     torch_file = filename.split('.')[0]+'.pth'
     json_file = filename.split('.')[0]+'.json'
     if os.path.exists(torch_file):

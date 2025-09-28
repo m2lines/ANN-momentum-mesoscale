@@ -32,6 +32,7 @@ if __name__ == '__main__':
     parser.add_argument('--FGR', type=int, default=3)
     parser.add_argument('--loss_function', type=str, default='forcing')
     parser.add_argument('--equivariant', type=str, default='False')
+    parser.add_argument('--symmetry_group', type=str, default='flipRot2dOnR2_N4')
 
     parser.add_argument('--path_save', type=str, default='test')
 
@@ -70,7 +71,8 @@ if __name__ == '__main__':
                     args.subfilter,
                     args.FGR,
                     args.loss_function,
-                    args.equivariant)
+                    args.equivariant,
+                    args.symmetry_group)
     
     nfeatures = args.stencil_size**2 * len(args.gradient_features) + len(args.feature_functions)
     export_ANN(ann_Tall, input_norms=torch.ones(nfeatures), output_norms=torch.ones(3), 
