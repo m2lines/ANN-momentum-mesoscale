@@ -6,11 +6,8 @@ import gsw
 from xgcm.padding import pad as xgcm_pad
 from functools import lru_cache
 
-try:
-    import torch
-    from helpers.ann_tools import image_to_nxn_stencil_gpt, import_ANN, torch_pad, tensor_from_xarray
-except:
-    pass
+import torch
+from helpers.ann_tools import image_to_nxn_stencil_gpt, import_ANN, torch_pad, tensor_from_xarray
 from helpers.selectors import select_LatLon, x_coord, y_coord
 import warnings
 warnings.filterwarnings("ignore")
@@ -1094,7 +1091,7 @@ class StateFunctions():
                   rotation=0, reflect_x=False, reflect_y=False,
                   dimensional_scaling=True, strain_norm = 1e-6, flux_norm = 1e-2,
                   feature_functions=[], gradient_features=['sh_xy', 'sh_xx', 'vort_xy'],
-                  jacobian_trace=False):
+                  jacobian_trace=False, positive_definite=False):
         '''
         The only input is the dataset itself.
         The output is predicted momentum flux in physical
@@ -1394,9 +1391,6 @@ class StateFunctions():
             Txy = Tall[:,:1] * (rotation_sign * reflect_sign)
             # Apply BC. Minus sign is needed for consistency with ZB
             Txy = - Txy.reshape(wet.shape) * wet
-            # Interpolating to corner for computing the flux divergence
-            Txy_c = torch_pad(Txy, right=True, top=True)
-            Txy_c = (Txy_c[:-1,:-1] + Txy_c[1:,:-1] + Txy_c[:-1,1:] + Txy_c[1:,1:]) * 0.25 * wet_c
             
             Tdiag = Tall[:,1:]
             # This transforms the prediction 
@@ -1411,6 +1405,49 @@ class StateFunctions():
                 print('Error: use rotation one of 0, 90, 180, 270')
             Txx =  - Tdiag[:,Txx_idx].reshape(wet.shape) * wet
             Tyy =  - Tdiag[:,Tyy_idx].reshape(wet.shape) * wet
+
+            if positive_definite:
+                '''
+                This code ensures that the momentum flux tensor tensor is positive
+                semidefinite:
+                tr(T) = Txx + Tyy >= 0 -> sum of eigenvalues is positive
+                det(T) = Txx * Tyy - Txy**2 >= 0 -> product of eigenvalues is positive
+                Additionally, we ensure the realezability conditions:
+                Txx >= 0
+                Tyy >= 0
+
+                We achieve these in three steps:
+                1) The first inequality is satisfied by clipping the trace
+
+                2) The third and forth inequalities are satisfied by clipping
+                the diagonal component of the deviatoric stress
+
+                3) Reconstruct Txx, Tyy from Ttr and Tdd
+
+                4) The second inequality is satisfied by clipping off-diagonal component
+                '''
+                # Note that we adjust the sign convention
+                # because our tensor flux is multiplied by -1
+
+                # Clip trace component
+                Ttr = torch.clamp(0.5 * (Txx + Tyy), max=0.)
+                
+                # Tdd cannot be bigger than Ttr in magnitude
+                Tdd = torch.clamp(0.5 * (Txx - Tyy), min=Ttr, max=-Ttr)
+                
+                # Reconstruct diagonal components
+                # because |Tdd|<=Ttr, diagonal
+                # components are guaranteed to be positive
+                Txx = Ttr + Tdd
+                Tyy = Ttr - Tdd
+
+                # Clip off-diagonal component
+                Txy_abs = torch.sqrt(Txx * Tyy)
+                Txy = torch.clamp(Txy, min=-Txy_abs, max=Txy_abs)
+                
+            # Interpolating to corner for computing the flux divergence
+            Txy_c = torch_pad(Txy, right=True, top=True)
+            Txy_c = (Txy_c[:-1,:-1] + Txy_c[1:,:-1] + Txy_c[:-1,1:] + Txy_c[1:,1:]) * 0.25 * wet_c
         
         Txx_padded = torch_pad(Txx * dyT**2, right=True)
         Txy_padded = torch_pad(Txy_c * dxBu**2, bottom=True)
@@ -1437,13 +1474,13 @@ class StateFunctions():
             rotation=0, reflect_x=False, reflect_y=False,
             dimensional_scaling=True, strain_norm = 1e-6, flux_norm = 1e-2,
             feature_functions=[], gradient_features=['sh_xy', 'sh_xx', 'vort_xy'],
-            jacobian_trace=False):
+            jacobian_trace=False, positive_definite=False):
         with torch.no_grad():
             pred = self.Apply_ANN(ann_Txy, ann_Txx_Tyy, ann_Tall, stencil_size,
                                 rotation, reflect_x, reflect_y,
                                 dimensional_scaling, strain_norm, flux_norm,
                                 feature_functions, gradient_features,
-                                jacobian_trace)
+                                jacobian_trace, positive_definite)
             
         Txy = pred['Txy'].numpy() + self.param.dxT * 0
         Txx = pred['Txx'].numpy() + self.param.dxT * 0
