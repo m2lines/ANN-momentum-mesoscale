@@ -33,6 +33,7 @@ if __name__ == '__main__':
     parser.add_argument('--loss_function', type=str, default='forcing')
     parser.add_argument('--equivariant', type=str, default='False')
     parser.add_argument('--symmetry_group', type=str, default='flipRot2dOnR2_N4')
+    parser.add_argument('--output_norms', type=float, default=1.0)
 
     parser.add_argument('--path_save', type=str, default='test')
 
@@ -72,10 +73,11 @@ if __name__ == '__main__':
                     args.FGR,
                     args.loss_function,
                     args.equivariant,
-                    args.symmetry_group)
+                    args.symmetry_group,
+                    args.output_norms)
     
     nfeatures = args.stencil_size**2 * len(args.gradient_features) + len(args.feature_functions)
-    export_ANN(ann_Tall, input_norms=torch.ones(nfeatures), output_norms=torch.ones(3), 
+    export_ANN(ann_Tall, input_norms=torch.ones(nfeatures), output_norms=args.output_norms * torch.ones(3), 
                 filename=f'{path_save}/model/Tall.nc')
     
     logger.to_netcdf(f'{path_save}/model/logger.nc')
@@ -85,7 +87,8 @@ if __name__ == '__main__':
     for factor in [15,12,9,4]:
         skill = ds[f'test-{factor}'].predict_ANN(None, None, ann_Tall,
                                                  stencil_size=args.stencil_size, dimensional_scaling=args.dimensional_scaling,
-                                                 feature_functions=args.feature_functions, gradient_features=args.gradient_features).SGS_skill()
+                                                 feature_functions=args.feature_functions, gradient_features=args.gradient_features,
+                                                 output_norms=args.output_norms).SGS_skill()
         skill.to_netcdf(f'{path_save}/skill-test/factor-{factor}.nc')
         del skill
         gc.collect()

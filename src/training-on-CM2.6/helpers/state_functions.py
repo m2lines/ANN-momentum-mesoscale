@@ -1091,7 +1091,8 @@ class StateFunctions():
                   rotation=0, reflect_x=False, reflect_y=False,
                   dimensional_scaling=True, strain_norm = 1e-6, flux_norm = 1e-2,
                   feature_functions=[], gradient_features=['sh_xy', 'sh_xx', 'vort_xy'],
-                  jacobian_trace=False, positive_definite=False):
+                  jacobian_trace=False, positive_definite=False,
+                  output_norms = 1.):
         '''
         The only input is the dataset itself.
         The output is predicted momentum flux in physical
@@ -1383,7 +1384,7 @@ class StateFunctions():
 
             # Now denormalize the output
             if dimensional_scaling:
-                Tall = Tall * input_norm * input_norm * (areaT).reshape(-1,1)
+                Tall = output_norms * Tall * input_norm * input_norm * (areaT).reshape(-1,1)
             else:
                 Tall = Tall * flux_norm
             
@@ -1474,13 +1475,13 @@ class StateFunctions():
             rotation=0, reflect_x=False, reflect_y=False,
             dimensional_scaling=True, strain_norm = 1e-6, flux_norm = 1e-2,
             feature_functions=[], gradient_features=['sh_xy', 'sh_xx', 'vort_xy'],
-            jacobian_trace=False, positive_definite=False):
+            jacobian_trace=False, positive_definite=False, output_norms=1.):
         with torch.no_grad():
             pred = self.Apply_ANN(ann_Txy, ann_Txx_Tyy, ann_Tall, stencil_size,
                                 rotation, reflect_x, reflect_y,
                                 dimensional_scaling, strain_norm, flux_norm,
                                 feature_functions, gradient_features,
-                                jacobian_trace, positive_definite)
+                                jacobian_trace, positive_definite, output_norms)
             
         Txy = pred['Txy'].numpy() + self.param.dxT * 0
         Txx = pred['Txx'].numpy() + self.param.dxT * 0

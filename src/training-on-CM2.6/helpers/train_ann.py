@@ -50,7 +50,8 @@ def train_ANN(factors=[9],
               subfilter='subfilter',
               FGR=3, loss_function='forcing',
               equivariant = False,
-              symmetry_group='flipRot2dOnR2_N4'):
+              symmetry_group='flipRot2dOnR2_N4',
+              output_norms=1.):
     '''
     time_iters is the number of time snaphots
     randomly sampled for each factor and depth
@@ -150,7 +151,7 @@ def train_ANN(factors=[9],
                 prediction = batch.state.Apply_ANN(None, None, ann_Tall,
                     stencil_size=stencil_size, dimensional_scaling=dimensional_scaling,
                     feature_functions=feature_functions, gradient_features=gradient_features,
-                    rotation=rotation, reflect_x=reflect_x, reflect_y=reflect_y)
+                    rotation=rotation, reflect_x=reflect_x, reflect_y=reflect_y, output_norms=output_norms)
 
                 if loss_function == 'forcing':
                     ANNx = prediction['ZB20u'] * SGS_norm
@@ -188,7 +189,7 @@ def train_ANN(factors=[9],
             prediction = batch.state.Apply_ANN(None, None, ann_Tall,
                     stencil_size=stencil_size, dimensional_scaling=dimensional_scaling,
                     feature_functions=feature_functions, gradient_features=gradient_features,
-                    rotation=rotation, reflect_x=reflect_x, reflect_y=reflect_y)
+                    rotation=rotation, reflect_x=reflect_x, reflect_y=reflect_y, output_norms=output_norms)
 
             if loss_function == 'forcing':
                 ANNx = prediction['ZB20u'] * SGS_norm
