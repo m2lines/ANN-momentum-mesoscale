@@ -71,7 +71,7 @@ def select_Gulf(array):
     return select_LatLon(array, Lat=(30, 60), Lon=(-80,-20))
 
 def select_Kuroshio(array):
-    return select_LatLon(array, Lat=(20, 50), Lon=(120,180))
+    return select_LatLon(array, Lat=(20, 50), Lon=(120-360,180-360))
 
 def select_SO(array):
     return select_LatLon(array, Lat=(-70,-30), Lon=(0,360))
@@ -98,14 +98,12 @@ def select_center(array):
 
     return array.sel({x.name:central_longitude, y.name:central_latitude}, method='nearest').drop_vars([x.name, y.name])
 
-def plot(control, mask=None, vmax=None, vmin=None, selector=select_NA, cartopy=True, cmap=cmocean.cm.balance):
-    if mask is not None:
-        mask_nan = selector(mask).data.copy()
-        mask_nan[mask_nan==0.] = np.nan
-    else:
-        mask_nan = 1
+def plot(control, vmax=None, vmin=None, selector=select_NA, cartopy=True, cmap=cmocean.cm.balance):
+    control = (selector(control)).compute()
 
-    control = (mask_nan * selector(control)).compute()
+    for dim in ['time', 'zl', 'i']:
+        if dim in control.dims:
+            control = control[{dim:0}]
     
     if vmax is None:
         control_mean = control.mean()
@@ -133,21 +131,27 @@ def plot(control, mask=None, vmax=None, vmin=None, selector=select_NA, cartopy=T
 
 # We compare masked fields because outside there may be 1e+20 values
 def compare(tested, control, mask=None, vmax=None, vmin = None, selector=select_NA, cmap=cmocean.cm.balance, 
-            label_test = 'Tested field', label_control = 'Control field'):
-    if mask is not None:
-        mask_nan = mask.data.copy()
-        mask_nan[mask_nan==0.] = np.nan
-        mask_nan = mask_nan + mask*0
-        tested = tested * mask_nan
-        control = control * mask_nan
+            label_test = 'Tested field', label_control = 'Control field', scale=False, difference=False, fontsize=12):
     tested = selector(tested).compute()
     control = selector(control).compute()
+
+    for dim in ['time', 'zl', 'i']:
+        if dim in control.dims and dim in tested.dims:
+            control = control[{dim:0}]
+            tested = tested[{dim:0}]
+
+    if scale:
+        optimal_scaling_initial = (tested*control).mean() / (tested**2).mean()
+        tested = tested * optimal_scaling_initial
     
     if vmax is None:
         control_mean = control.mean()
         control_std = control.std()
         vmax = control_mean + control_std * 4
         vmin = control_mean - control_std * 4
+
+        if vmin * vmax < 0 and (-vmin/vmax > 0.5 or -vmin/vmax <2):
+            vmin = -vmax 
     else:
         control_mean = 0.
         if vmin is None:
@@ -155,35 +159,78 @@ def compare(tested, control, mask=None, vmax=None, vmin = None, selector=select_
     
     central_latitude = float(y_coord(control).mean())
     central_longitude = float(x_coord(control).mean())
-    fig, axes = plt.subplots(2,2, figsize=(12, 10))
+    if difference:
+        fig, axes = plt.subplots(2,2, figsize=(12, 10))
+        axes = [axes[0,0], axes[0,1], axes[1,0]]
+    else:
+        fig, axes = plt.subplots(1,2, figsize=(12, 5))
     cmap.set_bad('gray')
     
-    ax = axes[0][0];# ax.coastlines(); gl = ax.gridlines(); gl.bottom_labels=True; gl.left_labels=True;
+    ax = axes[0];
     im = tested.plot(ax=ax, vmax=vmax, vmin=vmin, cmap=cmap, add_colorbar=False)
-    ax.set_title(label_test)
-    ax = axes[0][1];# ax.coastlines(); gl = ax.gridlines(); gl.bottom_labels=True; gl.left_labels=True;
+    ax.set_title(label_test, fontsize=fontsize)
+    ax = axes[1];
     control.plot(ax=ax, vmax=vmax, vmin=vmin, cmap=cmap, add_colorbar=False)
-    ax.set_title(label_control)
-    ax = axes[1][0];# ax.coastlines(); gl = ax.gridlines(); gl.bottom_labels=True; gl.left_labels=True;
-    (tested-control).plot(ax=ax, vmax=vmax-control_mean, vmin=vmin-control_mean, cmap=cmap, add_colorbar=False)
-    ax.set_title(f'{label_test} $-$ {label_control}')
+    ax.set_title(label_control, fontsize=fontsize)
+    if difference:
+        ax = axes[2];
+        (tested-control).plot(ax=ax, vmax=vmax-control_mean, vmin=vmin-control_mean, cmap=cmap, add_colorbar=False)
+        ax.set_title(f'{label_test} $-$ {label_control}')
+    
     plt.tight_layout()
     plt.colorbar(im, ax=axes, shrink=0.9, aspect=30, extend='both')
-    axes[1][1].remove()
-    
+    if difference:
+        axes[3].remove()
+
     ########## Metrics ##############
-    error = tested-control
+    error = tested - control
     relative_error = np.abs(error).mean() / np.abs(control).mean()
     R2 = 1 - (error**2).mean() / (control**2).mean()
     optimal_scaling = (tested*control).mean() / (tested**2).mean()
-    error = tested * optimal_scaling - control
-    R2_max = 1 - (error**2).mean() / (control**2).mean()
+    error_scaled = tested * optimal_scaling - control
+    R2_max = 1 - (error_scaled**2).mean() / (control**2).mean()
     corr = xr.corr(tested, control)
-    print('Correlation:', float(corr))
-    print('Relative Error:', float(relative_error))
-    print('R2 = ', float(R2))
-    print('R2 max = ', float(R2_max))
-    print('Optinal scaling:', float(optimal_scaling))
-    print(f'Nans [test/control]: [{int(np.sum(np.isnan(tested)))}, {int(np.sum(np.isnan(control)))}]')
+
+    # Place metrics inside the figure (relative coordinates)
+    if difference:
+        ax_metrics = axes[2]  # bottom-left subplot
+    else:
+        ax_metrics = axes[0] # left subplot
+    metrics_text = (
+        f"Correlation: {float(corr):.2f}\n"
+        f"Relative Error: {float(relative_error):.2f}\n"
+        f"R2: {float(R2):.2f}"
+    )
+    if not(scale):
+        metrics_text = metrics_text + (
+                f"\nR2 max: {float(R2_max):.2f}\n"
+                f"Optimal scaling: {float(optimal_scaling):.3E}\n"
+                f"Nans [test/control]: [{int(np.sum(np.isnan(tested)))}, {int(np.sum(np.isnan(control)))}]"
+        )
+    else:
+        metrics_text = metrics_text + (
+                f"\nScaling used: {float(optimal_scaling_initial):.1E}\n"
+        )
+
+    # Use relative coordinates: x=0.02, y=0.95 (top-left of axes)
+    ax_metrics.text(
+        0.02, 0.95, metrics_text, transform=ax_metrics.transAxes,
+        fontsize=12, verticalalignment='top', bbox=dict(facecolor='white', alpha=0.6)
+    )
+    
+    # ########## Metrics ##############
+    # error = tested-control
+    # relative_error = np.abs(error).mean() / np.abs(control).mean()
+    # R2 = 1 - (error**2).mean() / (control**2).mean()
+    # optimal_scaling = (tested*control).mean() / (tested**2).mean()
+    # error = tested * optimal_scaling - control
+    # R2_max = 1 - (error**2).mean() / (control**2).mean()
+    # corr = xr.corr(tested, control)
+    # print('Correlation:', float(corr))
+    # print('Relative Error:', float(relative_error))
+    # print('R2 = ', float(R2))
+    # print('R2 max = ', float(R2_max))
+    # print('Optinal scaling:', float(optimal_scaling))
+    # print(f'Nans [test/control]: [{int(np.sum(np.isnan(tested)))}, {int(np.sum(np.isnan(control)))}]')
 
     return axes

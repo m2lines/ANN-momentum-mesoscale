@@ -6,7 +6,7 @@ import copy
 
 # Service functions
 
-default_indices_names = ["i", "j", "k", "m", "n", "l", "o", "s", "t", "p", "q", "r", "a", "b"]
+default_indices_names = ["i", "j", "k", "m", "n", "l", "o", "s", "t", "p", "q", "r", "a", "b", "c", "d", "e", "f"]
 
 def return_dims(array):
     return [idx for idx in array.dims if idx in default_indices_names]
@@ -39,14 +39,14 @@ def symmetrize_tensor(_array, sym_axes):
         array += _array.copy().swap_dims(d)
     return array / len(list(permutations))
 
-def ddx(array):
+def ddx(array, param, grid):
     '''
     d/dx operator applied in center points
     '''
     out = param.wet * grid.interp(param.wet_u * grid.diff(param.wet * array,'X') / param.dxCu, 'X')
     return transposition_data(out)
 
-def ddy(array):
+def ddy(array, param, grid):
     '''
     d/dy operator applied in center points
     '''
@@ -193,7 +193,7 @@ class Tensor():
                     tensor = tensor.contract(pair)
                 results.append(tensor)
         
-        return results
+        return [result.rename() for result in results]
 
     def contract(self, pair):
         '''
@@ -257,7 +257,7 @@ class Tensor():
             
         return Tensor(array, label, hash_array)
 
-    def diff(self):
+    def diff(self, param, grid):
         '''
         Differentiate current tensor by applying \partial operator
         and increasing tensor rank by one
@@ -267,7 +267,9 @@ class Tensor():
 
         # @ is a special symbol representing \\partial
         label = f'@_{new_index}' + self.label
-        return Tensor(xr.concat([ddx(self.array), ddy(self.array)], dim=new_index), label=label)
+        return Tensor(xr.concat([ddx(self.array, param, grid), 
+                                 ddy(self.array, param, grid)], 
+                                 dim=new_index), label=label)
 
     @classmethod
     def init_vector(cls, u, v, label="u_i"):
