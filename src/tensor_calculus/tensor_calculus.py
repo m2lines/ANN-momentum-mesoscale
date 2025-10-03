@@ -6,6 +6,18 @@ import copy
 
 # Service functions
 
+def levi_civita(n):
+    """Return the Levi-Civita symbol ε_{i1...in} of dimension n."""
+    shape = (n,)*n
+    eps = np.zeros(shape, dtype=int)
+    from itertools import permutations
+    for p in permutations(range(n)):
+        i = tuple(p)
+        # sign of the permutation (even=+1, odd=-1)
+        parity = sum(p[i] > p[j] for i in range(n) for j in range(i+1,n))
+        eps[i] = -1 if parity % 2 else 1
+    return eps
+
 default_indices_names = ["i", "j", "k", "m", "n", "l", "o", "s", "t", "p", "q", "r", "a", "b", "c", "d", "e", "f"]
 
 def return_dims(array):
@@ -75,13 +87,21 @@ class Tensor():
         else:
             self.hash_array = transposition_data(hash_array)
 
+    @classmethod
+    def levi_civita(cls):
+        label = "#_{ij}"
+        array = xr.DataArray(levi_civita(2), dims=['i','j'])
+        hash_array = array
+
+        return cls(array, label, hash_array)
+
     # Service functions
     def _repr_latex_(self):
         '''
         Print tensor latex equation
         '''
         if self.label:
-            return f"${self.label}$".replace("@", "\\partial")
+            return f"${self.label}$".replace("@", "\\partial").replace("&", "\\Omega").replace("%", "S").replace("#", "\\varepsilon")
         else:
             return f"$T({', '.join(self.dims())})$"
 
@@ -129,7 +149,7 @@ class Tensor():
         # Update LaTeX label: swap pair[0] and pair[1]
         tmp_symbol = "__TMP__"
         label = copy.deepcopy(self.label)
-        new_label = (
+        label = (
             label
             .replace(pair[0], tmp_symbol)
             .replace(pair[1], pair[0])
@@ -220,12 +240,23 @@ class Tensor():
     def __sub__(self, tensor2):
         return Tensor(self.array-tensor2.array, self.label+'-'+tensor2.label, self.hash_array-tensor2.hash_array)
 
+    def __rmul__(self, scalar):
+        if not(isinstance(scalar, (int, float))):
+            raise ValueError(f"Right multiplication is only supported for scalars, got {type(scalar)}")
+        return Tensor(scalar*self.array, f'{scalar}({self.label})', scalar*self.hash_array)
+
+    def sqrt(self):
+        return Tensor(np.sqrt(self.array), f'\\sqrt{{{self.label}}}', np.sqrt(self.hash_array))
+
     def __mul__(self, tensor2):
         '''
         Multiplies two tensors as outer product,
         i.e. without repeating indices
         Main code handles that indices are indeed not reepeting
         '''
+        # if not(isinstance(tensor2, self.__class__)):
+        #     raise ValueError(f"Left multiplication is only supported for Tensors, got {type(tensor2)}")
+
         # Indices in the left tensor
         idx_set1 = self.dims()
         # Indices in the right tensor
