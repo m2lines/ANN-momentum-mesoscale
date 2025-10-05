@@ -101,7 +101,7 @@ class Tensor():
         Print tensor latex equation
         '''
         if self.label:
-            return f"${self.label}$".replace("@", "\\partial").replace("&", "\\Omega").replace("%", "S").replace("#", "\\varepsilon")
+            return f"${self.label}$".replace("@", "\\partial").replace("&", "\\Omega").replace("%", "S").replace("#", "\\varepsilon").replace("!", "{\\perp}")
         else:
             return f"$T({', '.join(self.dims())})$"
 
@@ -136,6 +136,25 @@ class Tensor():
         Copy tensor object and associated data
         '''
         return Tensor(self.array.copy(), copy.deepcopy(self.label), self.hash_array.copy())
+
+    def perp(self, index):
+        '''
+        Contract index with Levi-Civita symbol to get perpendicular index
+        On nabla = (d/dx, d/dy) it gives nabla_perp = (-d/dy, d/dx)
+        On velocity u = (u, v) it gives u_perp = (-v, u)
+        '''
+        if index not in self.dims():
+            raise ValueError(f"Index {index} not in tensor dims {self.dims()}")
+        
+        a0 = self.array.isel({index: 0})
+        a1 = self.array.isel({index: 1})
+        array = xr.concat([-a1, a0], dim=index)
+
+        a0 = self.hash_array.isel({index: 0})
+        a1 = self.hash_array.isel({index: 1})
+        hash_array = xr.concat([-a1, a0], dim=index)
+        label = self.label.replace(index, f"{index}^!")
+        return Tensor(array, label, hash_array)
     
     def transpose(self, pair):
         '''
@@ -158,7 +177,7 @@ class Tensor():
 
         return Tensor(array, label, hash_array)
     
-    def contract_to_rank_one(self):
+    def contract_to_rank_one(self, add_perp=False):
         """
         Non-recursive contraction to rank-1 tensors.
         Only keep unique results (by hash_array / 1D array comparison).
@@ -167,7 +186,10 @@ class Tensor():
         n = len(self.dims())
         
         if n == 1:
-            return [self]
+            if add_perp:
+                return [self, self.perp(self.dims()[0])]
+            else:
+                return [self]
 
         if n%2 == 0:
             return []
@@ -206,10 +228,53 @@ class Tensor():
             hash_array = np.array(hash_array)
             
             # Check uniqueness
-            if not any(np.allclose(hash_array, h) for h in unique_hashes):
-                unique_hashes.append(hash_array)
+            if any(np.allclose(hash_array, h) for h in unique_hashes):
+                continue
+            unique_hashes.append(hash_array)
+            
+            # Find perpendicular versions with non-zero hash
+
+            # Function to compute perpendicular only for a hash
+            def perp_hash(hash_array, index):
+                array = xr.zeros_like(hash_array)
+                array[{index:0}] = -hash_array[{index:1}]
+                array[{index:1}] = +hash_array[{index:0}]
+                return array
+            
+            #Create an iterator for a given pair_set
+            if add_perp:
+                perpendicular_iterator = list(itertools.product([False, True], repeat=n_pairs))
+            else:
+                perpendicular_iterator = [(False,)*n_pairs]
+
+            unique_perps = []
+            perpendicular_iterator_filtered = []
+            for perp in perpendicular_iterator:
+                hash_array = self.hash_array.copy()
+                for j, pair in enumerate(pair_set):
+                    if perp[j]:
+                        hash_array = perp_hash(hash_array, pair[0])
+                    hash_array = sum(hash_array.isel({pair[0]: i, pair[1]: i}) for i in range(2)).compute()
+                
+                # Convert to 1D numpy array
+                hash_array = np.array(hash_array)
+
+                if np.linalg.norm(hash_array) < 1e-8:
+                    continue
+
+                if any(np.allclose(hash_array, h) for h in unique_perps):
+                    continue
+
+                if any(np.allclose(-hash_array, h) for h in unique_perps):
+                    continue
+
+                perpendicular_iterator_filtered.append(perp)
+
+            for perp in perpendicular_iterator_filtered:
                 tensor = self
-                for pair in pair_set:
+                for j, pair in enumerate(pair_set):
+                    if perp[j]:
+                        tensor = tensor.perp(pair[0])
                     tensor = tensor.contract(pair)
                 results.append(tensor)
         
