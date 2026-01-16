@@ -4,7 +4,7 @@
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=64GB
 #SBATCH --begin=now
-#SBATCH --time=48:00:00
+#SBATCH --time=18:00:00
 #SBATCH --job-name=ANN_training
 
 ### For training: ntasks=4, mem=64GB, time=48:00:00
@@ -16,4 +16,5 @@
 
 #singularity exec --nv --overlay /scratch/$USER/python-container/python-overlay.ext3:ro /scratch/work/public/singularity/cuda11.6.124-cudnn8.4.0.27-devel-ubuntu20.04.4.sif /bin/bash -c "source /ext3/env.sh; time python -u train_script_fluxes.py --hidden_layers=\"[16,8]\" --path_save=flux-models/16-8-seed1 "
 
-singularity exec --nv --overlay /scratch/$USER/python-container/python-overlay.ext3:ro --bind /scratch/pp2681/python-container/escnn-cache:/ext3/miniconda3/lib/python3.11/site-packages/escnn/group/_cache/ /scratch/work/public/singularity/cuda11.6.124-cudnn8.4.0.27-devel-ubuntu20.04.4.sif /bin/bash -c "source /ext3/env.sh; time python -u train_script.py --learning_rate=0.01 --symmetries=False --equivariant=True --hidden_layers=\[16\] --path_save=equivariant/16-v1 "
+singularity exec --nv --overlay /scratch/$USER/python-container/python-overlay.ext3:ro --bind /scratch/pp2681/python-container/escnn-cache:/ext3/miniconda3/lib/python3.11/site-packages/escnn/group/_cache/ /scratch/work/public/singularity/cuda11.6.124-cudnn8.4.0.27-devel-ubuntu20.04.4.sif /bin/bash -c "source /ext3/env.sh; time python -u train_script.py --symmetries=False --output_norms=0.1 --equivariant=True --symmetry_group=flipRot2dOnR2_N4 --loss_function=forcing_fluxes --hidden_layers=\[64\] --learning_rate=0.1 --path_save=equivariant/learning_rate/N4-forcing-fluxes/0.1
+16-N8-forcing-and-fluxes-seed "

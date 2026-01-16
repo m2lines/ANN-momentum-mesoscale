@@ -16,11 +16,17 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--time_idx", type=int, default=0)
+parser.add_argument("--zl_idx", type=int, default=0)
 args = parser.parse_args()
 
 print(args)
 
-file_zi = f'/scratch/pp2681/mom6/Neverworld2/simulations/R32/filter_scale_0.75/interfaces/time_{args.time_idx}.nc'
+FOLDER = 'R2_FGR3'
+COARSENING_FACTOR = 16
+FILTER_SCALE = COARSENING_FACTOR * 3
+lores_static = xr.open_mfdataset('/scratch/pp2681/mom6/Neverworld2/simulations/R2-long/bare/output/static.nc', decode_times=False)
+
+file_zi = f'/scratch/pp2681/mom6/Neverworld2/simulations/R32/{FOLDER}/interfaces/time_{args.time_idx}_zl_{args.zl_idx}.nc'
 
 if os.path.exists(file_zi):
     print('Files already exist. Skip')
@@ -149,11 +155,9 @@ class GMFilter():
 
     return xr.where(np.isnan(eta),np.nan,etaf)
 
-lores_static = xr.open_mfdataset('/scratch/pp2681/mom6/Neverworld2/simulations/R4-long/bare/output/static.nc', decode_times=False)
-
 print('Reading data...')
 with ProgressBar():
-    ref = xr.open_mfdataset('/scratch/pp2681/mom6/Neverworld2/simulations/R32/snapshots_*', decode_times=False, chunks={'time':1, 'zl':1, 'zi':1}).e.isel(time=args.time_idx).load().chunk({'zi':1})
+    ref = xr.open_mfdataset('/scratch/pp2681/mom6/Neverworld2/simulations/R32/snapshots_*', decode_times=False, chunks={'time':1, 'zl':1, 'zi':1}).e.isel(time=args.time_idx)
     ref_static = xr.open_mfdataset('/scratch/pp2681/mom6/Neverworld2/simulations/R32/static.nc', decode_times=False).squeeze().drop_vars('time')
 
 lower_interface = ref.isel(zi=-1).squeeze().drop_vars(['time','zi'])
@@ -162,14 +166,14 @@ gmfilter = GMFilter(ref_static, lower_interface)
 # Filter scale of 24 is 32/4 * 3
 print('Filtering interfaces')
 with ProgressBar():
-    ef = gmfilter.diffusion_fixed_factor(ref,filter_scale=24,limit_fluxes=True).compute()
+    ef = gmfilter.diffusion_fixed_factor(ref.isel(zi=args.zl_idx),filter_scale=FILTER_SCALE,limit_fluxes=True).compute()
 
 print('Coarsening...; Here we simply interpolate to prevent deviation from real topography')
 ds_coarse = xr.Dataset()
 with ProgressBar():
-    ds_coarse['ef'] = ef.interp(yh=lores_static.yh, xh=lores_static.xh).compute().transpose('zi',...)
-    hf = -np.diff(ds_coarse['ef'].values,axis=0) # minus because vertical indexing is downward
-    ds_coarse['hf'] = xr.DataArray(hf, dims=['zl', 'yh', 'xh'])
+    ds_coarse['ef'] = ef.interp(yh=lores_static.yh, xh=lores_static.xh).compute()#.transpose('zi',...)
+    #hf = -np.diff(ds_coarse['ef'].values,axis=0) # minus because vertical indexing is downward
+    #ds_coarse['hf'] = xr.DataArray(hf, dims=['zl', 'yh', 'xh'])
     
 if not(os.path.exists(file_zi)):
     print(f'Saving to {file_zi}')

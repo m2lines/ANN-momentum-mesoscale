@@ -12,15 +12,20 @@ import sys
 import warnings
 warnings.filterwarnings("ignore", category=FutureWarning)
 
+FOLDER = 'R2_FGR3_RESTART'
+COARSENING_FACTOR = 16
+FILTER_SCALE = COARSENING_FACTOR * 3
+lores_static = xr.open_mfdataset('/scratch/pp2681/mom6/Neverworld2/simulations/R2-long/bare/output/static.nc', decode_times=False)
+
 parser = argparse.ArgumentParser()
 parser.add_argument("--time_idx", type=int, default=0)
 parser.add_argument("--zl_idx", type=int, default=0)
 args = parser.parse_args()
 
-file_zl = f'/scratch/pp2681/mom6/Neverworld2/simulations/R32/filter_scale_0.75/centers/time_{args.time_idx}_zl_{args.zl_idx}.nc'
-file_zi = f'/scratch/pp2681/mom6/Neverworld2/simulations/R32/filter_scale_0.75/interfaces/time_{args.time_idx}_zl_{args.zl_idx}.nc'
+file_zl = f'/scratch/pp2681/mom6/Neverworld2/simulations/R32/{FOLDER}/centers/time_{args.time_idx}_zl_{args.zl_idx}.nc'
+#file_zi = f'/scratch/pp2681/mom6/Neverworld2/simulations/R32/{FOLDER}/interfaces/time_{args.time_idx}_zl_{args.zl_idx}.nc'
 
-if os.path.exists(file_zl) and os.path.exists(file_zi):
+if os.path.exists(file_zl):
     print('Files already exist. Skip')
     sys.exit()
 
@@ -33,7 +38,6 @@ else:
 
 print(f"zi is: {zi_idx}")
 
-lores_static = xr.open_mfdataset('/scratch/pp2681/mom6/Neverworld2/simulations/R4-long/bare/output/static.nc', decode_times=False)
 grid_lores = xgcm.Grid(lores_static.isel(time=0).drop_vars('time').squeeze(), coords={
         'X': {'center': 'xh', 'outer': 'xq'},
         'Y': {'center': 'yh', 'outer': 'yq'}
@@ -49,8 +53,9 @@ lores_static['dyT'] = grid_lores.interp(lores_static.dyCu, 'X')
 
 print('Reading data...')
 with ProgressBar():
-    ref = xr.open_mfdataset('/scratch/pp2681/mom6/Neverworld2/simulations/R32/snapshots_*', decode_times=False, chunks={'time':1, 'zl':1, 'zi':1})[['u','v','h','e']].isel(time=args.time_idx, zl=args.zl_idx, zi=zi_idx).load()
-    ref_static = xr.open_mfdataset('/scratch/pp2681/mom6/Neverworld2/simulations/R32/static.nc', decode_times=False).squeeze().drop_vars('time').load()
+    #ref = xr.open_mfdataset('/scratch/pp2681/mom6/Neverworld2/simulations/R32/snapshots_*', decode_times=False, chunks={'time':1, 'zl':1})[['u','v']].isel(time=args.time_idx, zl=args.zl_idx)
+    ref = xr.open_mfdataset('/scratch/pp2681/mom6/Neverworld2/simulations/R32/RESTART/MOM.res.nc', decode_times=False, chunks={'Time':1, 'Layer':1})[['u', 'v', 'h']].rename({'Time': 'time', 'Layer': 'zl', 'lonh': 'xh', 'lath': 'yh', 'lonq': 'xq', 'latq': 'yq'}).isel(time=args.time_idx, zl=args.zl_idx)
+    ref_static = xr.open_mfdataset('/scratch/pp2681/mom6/Neverworld2/simulations/R32/static.nc', decode_times=False).squeeze().drop_vars('time')
 
 # Generate missing grid information
 grid_ref = xgcm.Grid(ref_static, coords={
@@ -168,7 +173,7 @@ def advection(u,v):
     return (CAu - KEx, CAv - KEy)
 
 filter_u = gcm_filters.Filter(
-                filter_scale=(32/4 * 3), # filter scale accounts for change in resolution (32/4) and FGR (3)
+                filter_scale=FILTER_SCALE, # filter scale accounts for change in resolution (32/4) and FGR (3)
                 dx_min=1,
                 filter_shape=gcm_filters.FilterShape.GAUSSIAN,
                 grid_type=gcm_filters.GridType.REGULAR_WITH_LAND,
@@ -176,7 +181,7 @@ filter_u = gcm_filters.Filter(
                 )
 
 filter_v = gcm_filters.Filter(
-                filter_scale=(32/4 * 3), # filter scale accounts for change in resolution (32/4) and FGR (3)
+                filter_scale=FILTER_SCALE, # filter scale accounts for change in resolution (32/4) and FGR (3)
                 dx_min=1,
                 filter_shape=gcm_filters.FilterShape.GAUSSIAN,
                 grid_type=gcm_filters.GridType.REGULAR_WITH_LAND,
@@ -184,7 +189,7 @@ filter_v = gcm_filters.Filter(
                 )
 
 filter_h = gcm_filters.Filter(
-                filter_scale=(32/4 * 3), # filter scale accounts for change in resolution (32/4) and FGR (3)
+                filter_scale=FILTER_SCALE, # filter scale accounts for change in resolution (32/4) and FGR (3)
                 dx_min=1,
                 filter_shape=gcm_filters.FilterShape.GAUSSIAN,
                 grid_type=gcm_filters.GridType.REGULAR_WITH_LAND,
@@ -194,52 +199,58 @@ filter_h = gcm_filters.Filter(
 # Creating filtered dataset
 ds = xr.Dataset()
 
-print('Filtering u/v/h/e...')
+#print('Filtering u/v/h/e...')
+#with ProgressBar():
+    #ds['uf'] = filter_u.apply(ref.u, dims=['yh', 'xq'])
+    #ds['vf'] = filter_v.apply(ref.v, dims=['yq', 'xh'])
+    #ds['hf'] = filter_h.apply(ref.h, dims=['yh', 'xh'])
+    #ds['ef'] = filter_h.apply(ref.e, dims=['yh', 'xh'])
+
+print('Thicnkess-weighted u and v')
 with ProgressBar():
-    ds['uf'] = filter_u.apply(ref.u, dims=['yh', 'xq'])
-    ds['vf'] = filter_v.apply(ref.v, dims=['yq', 'xh'])
-    ds['hf'] = filter_h.apply(ref.h, dims=['yh', 'xh'])
-    ds['ef'] = filter_h.apply(ref.e, dims=['yh', 'xh'])
+    h = filter_h.apply(ref.h, dims=['yh', 'xh']).compute()
+    ds['uf'] = grid_ref.interp(filter_h.apply(grid_ref.interp(ref.u, 'X'), dims=['yh', 'xh']) / (h + 1e-10), 'X')
+    ds['vf'] = grid_ref.interp(filter_h.apply(grid_ref.interp(ref.v, 'Y'), dims=['yh', 'xh']) / (h + 1e-10), 'Y')
 
-print('Computing SGS force...')
-with ProgressBar():
-    ds['advx_hires'], ds['advy_hires'] = advection(ref.u, ref.v)
-    ds['advx_filtered_tendency'] = filter_u.apply(ds['advx_hires'], dims=['yh', 'xq'])
-    ds['advy_filtered_tendency'] = filter_v.apply(ds['advy_hires'], dims=['yq', 'xh'])
-    del ds['advx_hires'], ds['advy_hires']
-    ds['advx_filtered_state'], ds['advy_filtered_state'] = advection(ds['uf'], ds['vf'])
+#print('Computing SGS force...')
+#with ProgressBar():
+#    ds['advx_hires'], ds['advy_hires'] = advection(ref.u, ref.v)
+#    ds['advx_filtered_tendency'] = filter_u.apply(ds['advx_hires'], dims=['yh', 'xq'])
+#    ds['advy_filtered_tendency'] = filter_v.apply(ds['advy_hires'], dims=['yq', 'xh'])
+#    del ds['advx_hires'], ds['advy_hires']
+#    ds['advx_filtered_state'], ds['advy_filtered_state'] = advection(ds['uf'], ds['vf'])
 
-    ds['SGSx'] = ds['advx_filtered_tendency'] - ds['advx_filtered_state']
-    ds['SGSy'] = ds['advy_filtered_tendency'] - ds['advy_filtered_state']
-    del ds['advx_filtered_tendency'], ds['advx_filtered_state'], ds['advy_filtered_tendency'], ds['advy_filtered_state']
+#    ds['SGSx'] = ds['advx_filtered_tendency'] - ds['advx_filtered_state']
+#    ds['SGSy'] = ds['advy_filtered_tendency'] - ds['advy_filtered_state']
+#    del ds['advx_filtered_tendency'], ds['advx_filtered_state'], ds['advy_filtered_tendency'], ds['advy_filtered_state']
 
-print('Computing subfilter flux...')
-with ProgressBar():
-    ds['Txx_hires'] = grid_ref.interp(ref.u * ref.u, 'X') * ref_static.wet
-    ds['Tyy_hires'] = grid_ref.interp(ref.v * ref.v, 'Y') * ref_static.wet
-    ds['Txy_hires'] = grid_ref.interp(ref.u, 'X') * grid_ref.interp(ref.v, 'Y') * ref_static.wet
+#print('Computing subfilter flux...')
+#with ProgressBar():
+#    ds['Txx_hires'] = grid_ref.interp(ref.u * ref.u, 'X') * ref_static.wet
+#    ds['Tyy_hires'] = grid_ref.interp(ref.v * ref.v, 'Y') * ref_static.wet
+#    ds['Txy_hires'] = grid_ref.interp(ref.u, 'X') * grid_ref.interp(ref.v, 'Y') * ref_static.wet
 
-    ds['Txx_filtered_tendency'] = filter_h.apply(ds['Txx_hires'], dims=['yh', 'xh'])
-    ds['Tyy_filtered_tendency'] = filter_h.apply(ds['Tyy_hires'], dims=['yh', 'xh'])
-    ds['Txy_filtered_tendency'] = filter_h.apply(ds['Txy_hires'], dims=['yh', 'xh'])
+#    ds['Txx_filtered_tendency'] = filter_h.apply(ds['Txx_hires'], dims=['yh', 'xh'])
+#    ds['Tyy_filtered_tendency'] = filter_h.apply(ds['Tyy_hires'], dims=['yh', 'xh'])
+#    ds['Txy_filtered_tendency'] = filter_h.apply(ds['Txy_hires'], dims=['yh', 'xh'])
 
-    del ds['Txx_hires'], ds['Tyy_hires'], ds['Txy_hires']
+#    del ds['Txx_hires'], ds['Tyy_hires'], ds['Txy_hires']
 
-    ds['Txx_filtered_state'] = grid_ref.interp(ds['uf'] * ds['uf'], 'X') * ref_static.wet
-    ds['Tyy_filtered_state'] = grid_ref.interp(ds['vf'] * ds['vf'], 'Y') * ref_static.wet
-    ds['Txy_filtered_state'] = grid_ref.interp(ds['uf'], 'X') * grid_ref.interp(ds['vf'], 'Y') * ref_static.wet
+#    ds['Txx_filtered_state'] = grid_ref.interp(ds['uf'] * ds['uf'], 'X') * ref_static.wet
+#    ds['Tyy_filtered_state'] = grid_ref.interp(ds['vf'] * ds['vf'], 'Y') * ref_static.wet
+#    ds['Txy_filtered_state'] = grid_ref.interp(ds['uf'], 'X') * grid_ref.interp(ds['vf'], 'Y') * ref_static.wet
 
-    ds['Txx'] = ds['Txx_filtered_state'] - ds['Txx_filtered_tendency']
-    ds['Tyy'] = ds['Tyy_filtered_state'] - ds['Tyy_filtered_tendency']
-    ds['Txy'] = ds['Txy_filtered_state'] - ds['Txy_filtered_tendency']
+#    ds['Txx'] = ds['Txx_filtered_state'] - ds['Txx_filtered_tendency']
+#    ds['Tyy'] = ds['Tyy_filtered_state'] - ds['Tyy_filtered_tendency']
+#    ds['Txy'] = ds['Txy_filtered_state'] - ds['Txy_filtered_tendency']
 
-    del ds['Txx_filtered_state'], ds['Tyy_filtered_state'], ds['Txy_filtered_state'], ds['Txx_filtered_tendency'], ds['Tyy_filtered_tendency'], ds['Txy_filtered_tendency']
+#    del ds['Txx_filtered_state'], ds['Tyy_filtered_state'], ds['Txy_filtered_state'], ds['Txx_filtered_tendency'], ds['Tyy_filtered_tendency'], ds['Txy_filtered_tendency']
 
 print('Coarsening...')
 with ProgressBar():
-    tmp = ds.astype('float32').coarsen({'xq':8, 'xh':8, 'yq': 8, 'yh':8}, boundary='pad').mean()
-    ds_coarse = tmp.interp(yq = lores_static.yq, xq = lores_static.xq)[['uf','vf','hf','SGSx','SGSy','Txx','Tyy','Txy']].compute()
-    ds_coarse_interface = tmp.interp(yq = lores_static.yq, xq = lores_static.xq)[['ef']].compute()
+    tmp = ds.astype('float32').coarsen({'xq':COARSENING_FACTOR, 'xh':COARSENING_FACTOR, 'yq': COARSENING_FACTOR, 'yh':COARSENING_FACTOR}, boundary='pad').mean()
+    ds_coarse = tmp.interp(yq = lores_static.yq, xq = lores_static.xq)[['uf','vf']].compute()
+    #ds_coarse_interface = tmp.interp(yq = lores_static.yq, xq = lores_static.xq)[['ef']].compute()
 
 del ds
 ################ Computing features on a coarse grid #################
@@ -261,21 +272,21 @@ def velocity_gradients(u=None, v=None):
     
     return sh_xx, sh_xy_h, vort_xy_h, div
 
-print('Velocity gradients...')
-with ProgressBar():
-    ds_coarse['sh_xx'], ds_coarse['sh_xy_h'], ds_coarse['vort_xy_h'], ds_coarse['div'] = velocity_gradients(ds_coarse.uf, ds_coarse.vf)
+#print('Velocity gradients...')
+#with ProgressBar():
+#    ds_coarse['sh_xx'], ds_coarse['sh_xy_h'], ds_coarse['vort_xy_h'], ds_coarse['div'] = velocity_gradients(ds_coarse.uf, ds_coarse.vf)
 
-print('SGS dissipation...')
-with ProgressBar():
-    Tdd = 0.5 * (ds_coarse['Txx'] - ds_coarse['Tyy'])
-    Ttr = 0.5 * (ds_coarse['Txx'] + ds_coarse['Tyy'])
-    # Positive number means backscatter
-    ds_coarse['SGS_back'] = - (Tdd * ds_coarse['sh_xx'] + Ttr * ds_coarse['div'] + ds_coarse['Txy'] * ds_coarse['sh_xy_h'])
-print('dEdt...')
-with ProgressBar():
+#print('SGS dissipation...')
+#with ProgressBar():
+#    Tdd = 0.5 * (ds_coarse['Txx'] - ds_coarse['Tyy'])
+#    Ttr = 0.5 * (ds_coarse['Txx'] + ds_coarse['Tyy'])
+#    # Positive number means backscatter
+#    ds_coarse['SGS_back'] = - (Tdd * ds_coarse['sh_xx'] + Ttr * ds_coarse['div'] + ds_coarse['Txy'] * ds_coarse['sh_xy_h'])
+#print('dEdt...')
+#with ProgressBar():
     # Subgrid forcing times the velocity
     # Positive number means backscatter
-    ds_coarse['dEdt'] = (grid_lores.interp(ds_coarse.SGSx * ds_coarse.uf, 'X') + grid_lores.interp(ds_coarse.SGSy * ds_coarse.vf, 'Y')) * lores_static.wet
+#    ds_coarse['dEdt'] = (grid_lores.interp(ds_coarse.SGSx * ds_coarse.uf, 'X') + grid_lores.interp(ds_coarse.SGSy * ds_coarse.vf, 'Y')) * lores_static.wet
 
 if not(os.path.exists(file_zl)):
     print(f'Saving to {file_zl}')
@@ -283,10 +294,10 @@ if not(os.path.exists(file_zl)):
         ds_coarse = ds_coarse.drop_vars('zi')
     except:
         pass
-ds_coarse.astype('float32').to_netcdf(file_zl)
+    ds_coarse.astype('float32').to_netcdf(file_zl)
 
-if not(os.path.exists(file_zi)):
-    print(f'Saving to {file_zi}')
-    ds_coarse_interface.astype('float32').drop_vars('zl').to_netcdf(file_zi)
+# if not(os.path.exists(file_zi)):
+#     print(f'Saving to {file_zi}')
+#     ds_coarse_interface.astype('float32').drop_vars('zl').to_netcdf(file_zi)
 
 print(f'Script is done')

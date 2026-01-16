@@ -299,9 +299,19 @@ def export_ANN(ann, input_norms, output_norms, filename='ANN_test.nc'):
         '''
         In this case we additionally save ANN in equivariant form
         '''
-        print('Saving additionally weights of equivariant part of ANN')
-        torch_file = filename.split('.')[0]+'.pth'
-        json_file = filename.split('.')[0]+'.json'
+        print('Saving weights of equaivariant part of ANN as .nc')
+        parameters = xr.Dataset()
+        parameters['weights1'] = xr.DataArray(ann.model[0].weights.detach().numpy(), dims='pdim1')
+        parameters['weights2'] = xr.DataArray(ann.model[2].weights.detach().numpy(), dims='pdim2')
+        parameters['biases1'] = xr.DataArray(ann.model[0].bias.detach().numpy(), dims='pdim3')
+        parameters['biases2'] = xr.DataArray(ann.model[2].bias.detach().numpy(), dims='pdim4')
+        netcdf_eANN = os.path.join(os.path.dirname(filename), "eANN.nc")
+        print('netcdf_eANN', netcdf_eANN)
+        parameters.to_netcdf(netcdf_eANN)
+
+        print('Saving additionally weights of equivariant part of ANN as .pth')
+        torch_file = os.path.join(os.path.dirname(filename), "Tall.pth")
+        json_file = os.path.join(os.path.dirname(filename), "Tall.json")
         torch.save(ann.state_dict(), torch_file)
         params = dict(hidden_layer_size=ann.hidden_layer_size, stencil_size=ann.stencil_size, symmetry=ann.symmetry)
         with open(json_file, "w") as f:
@@ -349,7 +359,7 @@ def export_ANN(ann, input_norms, output_norms, filename='ANN_test.nc'):
     
     ds.to_netcdf(filename)
     
-def import_ANN(filename='ANN_test.nc'):
+def import_ANN(filename='ANN_test.nc', return_both=False):
     ds = xr.open_dataset(filename)
     layer_sizes = ds['layer_sizes'].values
 
@@ -373,8 +383,8 @@ def import_ANN(filename='ANN_test.nc'):
         pass
 
     # Import equivariant ANN if torch file is available
-    torch_file = filename.split('.')[0]+'.pth'
-    json_file = filename.split('.')[0]+'.json'
+    torch_file = os.path.join(os.path.dirname(filename), "Tall.pth")
+    json_file = os.path.join(os.path.dirname(filename), "Tall.json")
     if os.path.exists(torch_file):
         print('Returning equivariant ANN instead')
         with open(json_file, "r") as f:
@@ -382,7 +392,10 @@ def import_ANN(filename='ANN_test.nc'):
         print(params)
         ann_equivariant = ANN_equivariant(**params)
         ann_equivariant.load_state_dict(torch.load(torch_file))
-        return ann_equivariant
+        if return_both:
+            return ann, ann_equivariant
+        else:
+            return ann_equivariant
     return ann
 
 class AverageLoss():
